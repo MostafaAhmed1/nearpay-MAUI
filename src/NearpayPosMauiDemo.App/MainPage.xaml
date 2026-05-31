@@ -153,7 +153,7 @@
 
                     <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
                         <VerticalStackLayout Spacing="6">
-                            <Label Text="Customer Ref (اختياري)" Style="{DynamicResource FieldLabelStyle}" />
+                            <Label Text="مرجع العميل (اختياري)" Style="{DynamicResource FieldLabelStyle}" />
                             <Border Style="{DynamicResource FieldBorderStyle}">
                                 <Entry Style="{DynamicResource FieldEntryStyle}"
                                        Placeholder="أي رقم/نص"
@@ -162,7 +162,7 @@
                         </VerticalStackLayout>
 
                         <VerticalStackLayout Spacing="6">
-                            <Label Text="Finish Timeout (sec)" Style="{DynamicResource FieldLabelStyle}" />
+                            <Label Text="مهلة الإنهاء (ث)" Style="{DynamicResource FieldLabelStyle}" />
                             <Border Style="{DynamicResource FieldBorderStyle}">
                                 <Entry Style="{DynamicResource FieldEntryStyle}"
                                        Keyboard="Numeric"
@@ -200,9 +200,12 @@
                     <Label Text="استخدم UserEnter للتجربة السريعة، أو JWT/Email/Mobile حسب إعداد حساب NearPay."
                            Style="{DynamicResource CaptionStyle}" />
 
-                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10" RowSpacing="10">
-                        <VerticalStackLayout Grid.Column="0" Spacing="6">
-                            <Label Text="Environment" Style="{DynamicResource FieldLabelStyle}" />
+                    <Grid ColumnDefinitions="*,*"
+                          RowDefinitions="Auto,Auto,Auto"
+                          ColumnSpacing="10"
+                          RowSpacing="10">
+                        <VerticalStackLayout Grid.Row="0" Grid.Column="0" Spacing="6">
+                            <Label Text="البيئة" Style="{DynamicResource FieldLabelStyle}" />
                             <Border Style="{DynamicResource FieldBorderStyle}">
                                 <Picker Style="{DynamicResource FieldPickerStyle}"
                                         ItemsSource="{Binding EnvironmentOptions}"
@@ -210,8 +213,8 @@
                             </Border>
                         </VerticalStackLayout>
 
-                        <VerticalStackLayout Grid.Column="1" Spacing="6">
-                            <Label Text="Auth Mode" Style="{DynamicResource FieldLabelStyle}" />
+                        <VerticalStackLayout Grid.Row="0" Grid.Column="1" Spacing="6">
+                            <Label Text="طريقة الدخول" Style="{DynamicResource FieldLabelStyle}" />
                             <Border Style="{DynamicResource FieldBorderStyle}">
                                 <Picker Style="{DynamicResource FieldPickerStyle}"
                                         ItemsSource="{Binding AuthModeOptions}"
@@ -219,8 +222,8 @@
                             </Border>
                         </VerticalStackLayout>
 
-                        <VerticalStackLayout Grid.ColumnSpan="2" Spacing="6">
-                            <Label Text="Auth Value (JWT / Email / Mobile)" Style="{DynamicResource FieldLabelStyle}" />
+                        <VerticalStackLayout Grid.Row="1" Grid.ColumnSpan="2" Spacing="6">
+                            <Label Text="بيانات الدخول (JWT / Email / Mobile)" Style="{DynamicResource FieldLabelStyle}" />
                             <Border Style="{DynamicResource FieldBorderStyle}">
                                 <Entry Style="{DynamicResource FieldEntryStyle}"
                                        Placeholder="JWT / Email / Mobile"
@@ -229,8 +232,8 @@
                             </Border>
                         </VerticalStackLayout>
 
-                        <VerticalStackLayout Grid.Column="0" Spacing="6">
-                            <Label Text="Locale" Style="{DynamicResource FieldLabelStyle}" />
+                        <VerticalStackLayout Grid.Row="2" Grid.Column="0" Spacing="6">
+                            <Label Text="اللغة (Locale)" Style="{DynamicResource FieldLabelStyle}" />
                             <Border Style="{DynamicResource FieldBorderStyle}">
                                 <Entry Style="{DynamicResource FieldEntryStyle}"
                                        Placeholder="ar-SA"
@@ -239,7 +242,7 @@
                             </Border>
                         </VerticalStackLayout>
 
-                        <VerticalStackLayout Grid.Column="1" Spacing="6">
+                        <VerticalStackLayout Grid.Row="2" Grid.Column="1" Spacing="6">
                             <Label Text="TID (اختياري)" Style="{DynamicResource FieldLabelStyle}" />
                             <Border Style="{DynamicResource FieldBorderStyle}">
                                 <Entry Style="{DynamicResource FieldEntryStyle}"
@@ -252,8 +255,11 @@
 
                     <Label Text="حقول Refund / Reverse" Style="{DynamicResource SectionTitleStyle}" />
 
-                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10" RowSpacing="10">
-                        <VerticalStackLayout Grid.ColumnSpan="2" Spacing="6">
+                    <Grid ColumnDefinitions="*,*"
+                          RowDefinitions="Auto,Auto"
+                          ColumnSpacing="10"
+                          RowSpacing="10">
+                        <VerticalStackLayout Grid.Row="0" Grid.ColumnSpan="2" Spacing="6">
                             <Label Text="Transaction UUID" Style="{DynamicResource FieldLabelStyle}" />
                             <Border Style="{DynamicResource FieldBorderStyle}">
                                 <Entry Style="{DynamicResource FieldEntryStyle}"
@@ -263,7 +269,7 @@
                             </Border>
                         </VerticalStackLayout>
 
-                        <VerticalStackLayout Grid.Column="0" Spacing="6">
+                        <VerticalStackLayout Grid.Row="1" Grid.Column="0" Spacing="6">
                             <Label Text="Admin PIN (اختياري)" Style="{DynamicResource FieldLabelStyle}" />
                             <Border Style="{DynamicResource FieldBorderStyle}">
                                 <Entry Style="{DynamicResource FieldEntryStyle}"
@@ -274,7 +280,7 @@
                             </Border>
                         </VerticalStackLayout>
 
-                        <VerticalStackLayout Grid.Column="1" Spacing="6">
+                        <VerticalStackLayout Grid.Row="1" Grid.Column="1" Spacing="6">
                             <Label Text="خيارات الواجهة" Style="{DynamicResource FieldLabelStyle}" />
                             <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="Auto,*" RowSpacing="6" ColumnSpacing="8">
                                 <CheckBox Grid.Row="0" Grid.Column="0" IsChecked="{Binding EnableReceiptUi}" />
