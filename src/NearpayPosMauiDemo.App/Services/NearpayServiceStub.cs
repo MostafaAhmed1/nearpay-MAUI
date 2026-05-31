@@ -26,3 +26,16 @@ public sealed class NearpayServiceStub : INearpayService
         => Task.FromResult(new NearpayOperationResult<NearpayReconcileResult>(false, "غير مدعوم على هذا النظام"));
 }
 
+public sealed class NfcReaderServiceStub : INfcReaderService
+{
+    public bool IsSupported => false;
+    public bool IsListening => false;
+
+    public event EventHandler<NfcTagDiscoveredEventArgs>? TagDiscovered;
+
+    public Task StartAsync(CancellationToken ct = default)
+        => throw new PlatformNotSupportedException("NFC مدعوم على Android فقط.");
+
+    public Task StopAsync(CancellationToken ct = default)
+        => Task.CompletedTask;
+}
