@@ -5,12 +5,111 @@
              FlowDirection="RightToLeft"
              Title="NearPay POS Demo">
 
+    <!--
+      IMPORTANT:
+      بعض بيئات التشغيل (خصوصاً مع Fast Deployment) قد تفشل في تحميل Application Resources بشكل صحيح.
+      لتجنب Crash قبل حتى ظهور الشاشة، نعرّف أهم الـ Resources محلياً داخل الصفحة كـ fallback.
+    -->
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <!-- Minimal palette -->
+            <Color x:Key="Primary">#1B3A57</Color>
+            <Color x:Key="PrimaryDarkText">#0B1220</Color>
+            <Color x:Key="Secondary">#E6EEF5</Color>
+            <Color x:Key="Success">#16A34A</Color>
+            <Color x:Key="Warning">#F59E0B</Color>
+            <Color x:Key="Danger">#DC2626</Color>
+            <Color x:Key="CardBackground">#FFFFFF</Color>
+            <Color x:Key="CardStroke">#D6DEE8</Color>
+            <Color x:Key="Gray300">#ACACAC</Color>
+            <Color x:Key="Gray600">#404040</Color>
+            <Color x:Key="Gray900">#212121</Color>
+
+            <!-- Typography -->
+            <Style x:Key="SectionTitleStyle" TargetType="Label">
+                <Setter Property="FontFamily" Value="OpenSansSemibold" />
+                <Setter Property="FontSize" Value="16" />
+                <Setter Property="TextColor" Value="{StaticResource PrimaryDarkText}" />
+            </Style>
+
+            <Style x:Key="CaptionStyle" TargetType="Label">
+                <Setter Property="FontSize" Value="12" />
+                <Setter Property="TextColor" Value="{StaticResource Gray600}" />
+            </Style>
+
+            <!-- Field styles -->
+            <Style x:Key="FieldLabelStyle" TargetType="Label">
+                <Setter Property="FontSize" Value="12" />
+                <Setter Property="TextColor" Value="{StaticResource Gray600}" />
+            </Style>
+
+            <Style x:Key="FieldBorderStyle" TargetType="Border">
+                <Setter Property="Stroke" Value="{StaticResource CardStroke}" />
+                <Setter Property="StrokeThickness" Value="1" />
+                <Setter Property="StrokeShape" Value="RoundRectangle 12" />
+                <Setter Property="Padding" Value="10,8" />
+                <Setter Property="BackgroundColor" Value="{StaticResource CardBackground}" />
+            </Style>
+
+            <Style x:Key="FieldEntryStyle" TargetType="Entry">
+                <Setter Property="BackgroundColor" Value="Transparent" />
+                <Setter Property="ClearButtonVisibility" Value="WhileEditing" />
+            </Style>
+
+            <Style x:Key="FieldPickerStyle" TargetType="Picker">
+                <Setter Property="BackgroundColor" Value="Transparent" />
+            </Style>
+
+            <Style x:Key="AmountEntryStyle" TargetType="Entry">
+                <Setter Property="FontFamily" Value="OpenSansSemibold" />
+                <Setter Property="FontSize" Value="28" />
+                <Setter Property="TextColor" Value="{StaticResource PrimaryDarkText}" />
+                <Setter Property="BackgroundColor" Value="Transparent" />
+            </Style>
+
+            <!-- Card container -->
+            <Style x:Key="CardBorderStyle" TargetType="Border">
+                <Setter Property="BackgroundColor" Value="{StaticResource CardBackground}" />
+                <Setter Property="Stroke" Value="{StaticResource CardStroke}" />
+                <Setter Property="StrokeThickness" Value="1" />
+                <Setter Property="StrokeShape" Value="RoundRectangle 16" />
+                <Setter Property="Padding" Value="14" />
+                <Setter Property="Shadow">
+                    <Shadow Brush="#000000" Opacity="0.10" Offset="0,6" Radius="14" />
+                </Setter>
+            </Style>
+
+            <!-- Buttons -->
+            <Style x:Key="ButtonBase" TargetType="Button">
+                <Setter Property="CornerRadius" Value="14" />
+                <Setter Property="Padding" Value="14,14" />
+                <Setter Property="FontFamily" Value="OpenSansSemibold" />
+                <Setter Property="FontSize" Value="14" />
+                <Setter Property="TextColor" Value="White" />
+            </Style>
+
+            <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource ButtonBase}">
+                <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+            </Style>
+            <Style x:Key="SuccessButton" TargetType="Button" BasedOn="{StaticResource ButtonBase}">
+                <Setter Property="BackgroundColor" Value="{StaticResource Success}" />
+            </Style>
+            <Style x:Key="WarningButton" TargetType="Button" BasedOn="{StaticResource ButtonBase}">
+                <Setter Property="BackgroundColor" Value="{StaticResource Warning}" />
+                <Setter Property="TextColor" Value="{StaticResource PrimaryDarkText}" />
+            </Style>
+            <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource ButtonBase}">
+                <Setter Property="BackgroundColor" Value="{StaticResource Danger}" />
+            </Style>
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
     <ScrollView>
         <VerticalStackLayout Padding="16" Spacing="14">
 
             <!-- Header -->
             <Border Style="{DynamicResource CardBorderStyle}"
-                    BackgroundColor="{StaticResource Primary}"
+                    BackgroundColor="{DynamicResource Primary}"
                     StrokeThickness="0">
                 <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12" VerticalOptions="Center">
                     <Border WidthRequest="44" HeightRequest="44"
@@ -21,7 +120,7 @@
                             HorizontalOptions="Center">
                         <Label Text="NP"
                                FontFamily="OpenSansSemibold"
-                               TextColor="{StaticResource Primary}"
+                               TextColor="{DynamicResource Primary}"
                                HorizontalTextAlignment="Center"
                                VerticalTextAlignment="Center"/>
                     </Border>
@@ -46,7 +145,7 @@
                            Style="{DynamicResource CaptionStyle}" />
 
                     <Border Style="{DynamicResource FieldBorderStyle}">
-                        <Entry Style="{StaticResource AmountEntryStyle}"
+                        <Entry Style="{DynamicResource AmountEntryStyle}"
                                Keyboard="Numeric"
                                Text="{Binding AmountMinor}"
                                FlowDirection="LeftToRight" />
@@ -205,7 +304,7 @@
                         <CollectionView.ItemTemplate>
                             <DataTemplate>
                                 <Border StrokeThickness="0" Padding="8,6"
-                                        BackgroundColor="{AppThemeBinding Light={StaticResource Secondary}, Dark={StaticResource Gray900}}"
+                                        BackgroundColor="{DynamicResource Secondary}"
                                         StrokeShape="RoundRectangle 10">
                                     <Label Text="{Binding .}" FontSize="12" LineBreakMode="WordWrap" />
                                 </Border>
