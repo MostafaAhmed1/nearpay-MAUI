@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-android</TargetFramework>
+    <SupportedOSPlatformVersion>24</SupportedOSPlatformVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!--
+      Enable trim analyzers for Android class libraries.
+      To learn more, see: https://learn.microsoft.com/dotnet/core/deploying/trimming/prepare-libraries-for-trimming
+    -->
+    <IsTrimmable>true</IsTrimmable>
+    <!--
+      NOTE: you can simply add .aar or .jar files in this directory to be included in the project.
+      To learn more, see: https://learn.microsoft.com/dotnet/maui/migration/android-binding-projects
+    -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- NearPay Payment Plugin SDK (public Maven artifact). -->
+    <AndroidMavenLibrary Include="io.nearpay:nearpay-sdk" Version="2.1.98" VerifyDependencies="false" />
+    <AndroidMavenLibrary Include="io.nearpay:nearpay-sdk-shared-public" Version="2.1.98" VerifyDependencies="false" />
+    <AndroidMavenLibrary Include="io.nearpay:nearpay-sdk-shared-internal" Version="2.1.98" VerifyDependencies="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Xamarin.AndroidX.AppCompat" Version="1.7.1.3" />
+    <PackageReference Include="Xamarin.AndroidX.Core" Version="1.18.0" />
+    <PackageReference Include="Xamarin.AndroidX.Core.Core.Ktx" Version="1.18.0" />
+    <PackageReference Include="Xamarin.AndroidX.DataBinding.ViewBinding" Version="9.2.1" />
+    <PackageReference Include="Xamarin.AndroidX.Fragment" Version="1.8.9.2" />
+    <PackageReference Include="Xamarin.Google.Android.Material" Version="1.14.0" />
+    <PackageReference Include="Xamarin.Kotlin.StdLib" Version="2.3.21" />
+    <PackageReference Include="Xamarin.Kotlin.StdLib.Common" Version="2.0.21.7" />
+    <PackageReference Include="Xamarin.Kotlin.StdLib.Jdk7" Version="2.3.21" />
+    <PackageReference Include="Xamarin.Kotlin.StdLib.Jdk8" Version="2.3.21" />
+  </ItemGroup>
+</Project>

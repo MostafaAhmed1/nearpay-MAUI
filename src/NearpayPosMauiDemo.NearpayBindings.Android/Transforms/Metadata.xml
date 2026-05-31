@@ -1,0 +1,64 @@
+﻿<metadata>
+  <!-- Prevent generating a C# override for java.lang.Object.finalize() -->
+  <remove-node path="/api/package[@name='io.nearpay.sdk']/class[@name='NearPay']/method[@name='finalize']" />
+
+  <!-- The SDK contains many Parcelable *Creator types that cause signature mismatches in generated C#.
+       We don't need them for our usage, so we remove them from the bound API surface. -->
+  <remove-node path="/api/package/class[contains(@name,'.Creator')]" />
+
+  <!-- Remove UI/ViewBinding and receipt UI packages from the binding to avoid adapter/view-binding signature issues.
+       The demo app relies on the high-level SDK entry points + listeners only. -->
+  <remove-node path="/api/package[@name='io.nearpay.sdk.databinding']" />
+  <remove-node path="/api/package[@name='io.nearpay.sdk.receipt.reconcile']" />
+  <remove-node path="/api/package[@name='io.nearpay.sdk.receipt.transaction']" />
+  <remove-node path="/api/package[@name='io.nearpay.sdk_internal.utils']" />
+
+  <!-- Avoid C# EventArgs name collisions (the generator defaults to generic names like FailureEventArgs/SuccessEventArgs). -->
+  <attr path="/api/package[@name='io.nearpay.sdk.utils.listeners']/interface[@name='BitmapListener']/method[@name='result' and count(parameter)=1]" name="argsType">BitmapListenerResultEventArgs</attr>
+
+  <attr path="/api/package[@name='io.nearpay.sdk.utils.listeners']/interface[@name='CancelListener']/method[@name='onCancel' and count(parameter)=1]" name="argsType">CancelListenerCancelledEventArgs</attr>
+  <attr path="/api/package[@name='io.nearpay.sdk.utils.listeners']/interface[@name='CancelListener']/method[@name='onCancelFailure' and count(parameter)=1]" name="argsType">CancelListenerFailureEventArgs</attr>
+  <attr path="/api/package[@name='io.nearpay.sdk.utils.listeners']/interface[@name='CancelListener']/method[@name='onCancelWithReverse' and count(parameter)=1]" name="argsType">CancelListenerCancelledWithReverseEventArgs</attr>
+
+  <attr path="/api/package[@name='io.nearpay.sdk.utils.listeners']/interface[@name='CheckSessionListener']/method[@name='getSessionInfo' and count(parameter)=1]" name="argsType">CheckSessionListenerInfoEventArgs</attr>
+  <attr path="/api/package[@name='io.nearpay.sdk.utils.listeners']/interface[@name='CheckSessionListener']/method[@name='onSessionBusy' and count(parameter)=1]" name="argsType">CheckSessionListenerBusyEventArgs</attr>
+  <attr path="/api/package[@name='io.nearpay.sdk.utils.listeners']/interface[@name='CheckSessionListener']/method[@name='onSessionFailed' and count(parameter)=1]" name="argsType">CheckSessionListenerFailedEventArgs</attr>
+  <attr path="/api/package[@name='io.nearpay.sdk.utils.listeners']/interface[@name='CompatibilityListener']/method[@name='onDeviceIncompatible' and count(parameter)=1]" name="argsType">CompatibilityListenerIncompatibleEventArgs</attr>
+
+  <attr path="/api/package[@name='io.nearpay.sdk.utils.listeners']/interface[@name='DismissListener']/method[@name='onDismiss' and count(parameter)=1]" name="argsType">DismissListenerDismissedEventArgs</attr>
+  <attr path="/api/package[@name='io.nearpay.sdk.utils.listeners']/interface[@name='DismissListener']/method[@name='onDismissFailure' and count(parameter)=1]" name="argsType">DismissListenerFailureEventArgs</attr>
+
+  <attr path="/api/package[@name='io.nearpay.sdk.utils.listeners']/interface[@name='GetReconcileListener']/method[@name='onFailure' and count(parameter)=1]" name="argsType">GetReconcileListenerFailureEventArgs</attr>
+  <attr path="/api/package[@name='io.nearpay.sdk.utils.listeners']/interface[@name='GetReconcileListener']/method[@name='onSuccess' and count(parameter)=1]" name="argsType">GetReconcileListenerSuccessEventArgs</attr>
+
+  <attr path="/api/package[@name='io.nearpay.sdk.utils.listeners']/interface[@name='GetReconciliationPageListener']/method[@name='onFailure' and count(parameter)=1]" name="argsType">GetReconciliationPageListenerFailureEventArgs</attr>
+  <attr path="/api/package[@name='io.nearpay.sdk.utils.listeners']/interface[@name='GetReconciliationPageListener']/method[@name='onSuccess' and count(parameter)=1]" name="argsType">GetReconciliationPageListenerSuccessEventArgs</attr>
+
+  <attr path="/api/package[@name='io.nearpay.sdk.utils.listeners']/interface[@name='GetTransactionListener']/method[@name='onFailure' and count(parameter)=1]" name="argsType">GetTransactionListenerFailureEventArgs</attr>
+  <attr path="/api/package[@name='io.nearpay.sdk.utils.listeners']/interface[@name='GetTransactionListener']/method[@name='onSuccess' and count(parameter)=1]" name="argsType">GetTransactionListenerSuccessEventArgs</attr>
+
+  <attr path="/api/package[@name='io.nearpay.sdk.utils.listeners']/interface[@name='GetTransactionPageListener']/method[@name='onFailure' and count(parameter)=1]" name="argsType">GetTransactionPageListenerFailureEventArgs</attr>
+  <attr path="/api/package[@name='io.nearpay.sdk.utils.listeners']/interface[@name='GetTransactionPageListener']/method[@name='onSuccess' and count(parameter)=1]" name="argsType">GetTransactionPageListenerSuccessEventArgs</attr>
+
+  <attr path="/api/package[@name='io.nearpay.sdk.utils.listeners']/interface[@name='LogoutListener']/method[@name='onLogoutFailed' and count(parameter)=1]" name="argsType">LogoutListenerFailedEventArgs</attr>
+
+  <attr path="/api/package[@name='io.nearpay.sdk.utils.listeners']/interface[@name='PurchaseListener']/method[@name='onPurchaseApproved' and count(parameter)=1]" name="argsType">PurchaseListenerApprovedEventArgs</attr>
+  <attr path="/api/package[@name='io.nearpay.sdk.utils.listeners']/interface[@name='PurchaseListener']/method[@name='onPurchaseFailed' and count(parameter)=1]" name="argsType">PurchaseListenerFailedEventArgs</attr>
+
+  <attr path="/api/package[@name='io.nearpay.sdk.utils.listeners']/interface[@name='ReconcileListener']/method[@name='onReconcileFailed' and count(parameter)=1]" name="argsType">ReconcileListenerFailedEventArgs</attr>
+  <attr path="/api/package[@name='io.nearpay.sdk.utils.listeners']/interface[@name='ReconcileListener']/method[@name='onReconcileFinished' and count(parameter)=1]" name="argsType">ReconcileListenerFinishedEventArgs</attr>
+
+  <attr path="/api/package[@name='io.nearpay.sdk.utils.listeners']/interface[@name='RefundListener']/method[@name='onRefundApproved' and count(parameter)=1]" name="argsType">RefundListenerApprovedEventArgs</attr>
+  <attr path="/api/package[@name='io.nearpay.sdk.utils.listeners']/interface[@name='RefundListener']/method[@name='onRefundFailed' and count(parameter)=1]" name="argsType">RefundListenerFailedEventArgs</attr>
+
+  <attr path="/api/package[@name='io.nearpay.sdk.utils.listeners']/interface[@name='ReversalListener']/method[@name='onReversalFailed' and count(parameter)=1]" name="argsType">ReversalListenerFailedEventArgs</attr>
+  <attr path="/api/package[@name='io.nearpay.sdk.utils.listeners']/interface[@name='ReversalListener']/method[@name='onReversalFinished' and count(parameter)=1]" name="argsType">ReversalListenerFinishedEventArgs</attr>
+
+  <attr path="/api/package[@name='io.nearpay.sdk.utils.listeners']/interface[@name='SessionListener']/method[@name='onSessionClosed' and count(parameter)=1]" name="argsType">SessionListenerClosedEventArgs</attr>
+  <attr path="/api/package[@name='io.nearpay.sdk.utils.listeners']/interface[@name='SessionListener']/method[@name='onSessionFailed' and count(parameter)=1]" name="argsType">SessionListenerFailedEventArgs</attr>
+  <attr path="/api/package[@name='io.nearpay.sdk.utils.listeners']/interface[@name='SessionListener']/method[@name='onSessionOpen' and count(parameter)=1]" name="argsType">SessionListenerOpenEventArgs</attr>
+
+  <attr path="/api/package[@name='io.nearpay.sdk.utils.listeners']/interface[@name='SetupListener']/method[@name='onSetupFailed' and count(parameter)=1]" name="argsType">SetupListenerFailedEventArgs</attr>
+
+  <attr path="/api/package[@name='io.nearpay.sdk.utils.listeners']/interface[@name='ShareUrlServiceListener']/method[@name='onProcessed' and count(parameter)=1]" name="argsType">ShareUrlServiceListenerProcessedEventArgs</attr>
+</metadata>
