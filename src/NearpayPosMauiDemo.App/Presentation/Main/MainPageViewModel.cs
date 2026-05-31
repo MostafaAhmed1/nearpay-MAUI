@@ -9,13 +9,10 @@ namespace NearpayPosMauiDemo.App.Presentation.Main;
 public partial class MainPageViewModel : ObservableObject
 {
     private readonly INearpayService _nearpay;
-    private readonly INfcReaderService _nfc;
 
-    public MainPageViewModel(INearpayService nearpay, INfcReaderService nfc)
+    public MainPageViewModel(INearpayService nearpay)
     {
         _nearpay = nearpay;
-        _nfc = nfc;
-        _nfc.TagDiscovered += OnNfcTagDiscovered;
 
         EnvironmentOptions = Enum.GetNames(typeof(NearpayEnvironment));
         AuthModeOptions = Enum.GetNames(typeof(NearpayAuthMode));
@@ -51,9 +48,6 @@ public partial class MainPageViewModel : ObservableObject
     [ObservableProperty] private bool enableEditableRefundAmountUi;
     [ObservableProperty] private bool enableUiDismiss;
 
-    [ObservableProperty] private bool isNfcListening;
-    public bool IsNfcSupported => _nfc.IsSupported;
-
     [ObservableProperty] private string statusMessage = "جاهز";
 
     public ObservableCollection<string> Logs { get; } = new();
@@ -63,15 +57,6 @@ public partial class MainPageViewModel : ObservableObject
         var line = $"[{DateTime.Now:HH:mm:ss}] {message}";
         Logs.Insert(0, line);
         StatusMessage = message;
-    }
-
-    private void OnNfcTagDiscovered(object? sender, NfcTagDiscoveredEventArgs e)
-    {
-        var id = string.IsNullOrWhiteSpace(e.Tag.TagIdHex) ? "N/A" : e.Tag.TagIdHex;
-        var techs = e.Tag.TechList.Count == 0 ? "N/A" : string.Join(", ", e.Tag.TechList.Select(t => t.Split('.').Last()));
-        var extra = string.IsNullOrWhiteSpace(e.Tag.NdefText) ? "" : $" | NDEF: {e.Tag.NdefText}";
-
-        Log($"NFC Detected | ID={id} | Tech={techs}{extra}");
     }
 
     private static NearpayEnvironment ParseEnv(string value)
@@ -112,9 +97,6 @@ public partial class MainPageViewModel : ObservableObject
     [RelayCommand]
     private async Task Purchase(CancellationToken ct)
     {
-        if (IsNfcListening)
-            Log("تنبيه: وضع NFC Scan مفعّل. إذا واجهت تعارض مع NearPay أوقف NFC Scan ثم جرّب الدفع.");
-
         var req = new NearpayPurchaseRequest(
             AmountMinor,
             CustomerReferenceNumber,
@@ -195,27 +177,5 @@ public partial class MainPageViewModel : ObservableObject
     {
         Logs.Clear();
         StatusMessage = "تم مسح السجل";
-    }
-
-    [RelayCommand]
-    private async Task StartNfcScan(CancellationToken ct)
-    {
-        if (!IsNfcSupported)
-        {
-            Log("NFC غير مدعوم على هذا الجهاز");
-            return;
-        }
-
-        await _nfc.StartAsync(ct);
-        IsNfcListening = _nfc.IsListening;
-        Log("تم تفعيل NFC Scan: قرّب البطاقة/التاج من الهاتف");
-    }
-
-    [RelayCommand]
-    private async Task StopNfcScan(CancellationToken ct)
-    {
-        await _nfc.StopAsync(ct);
-        IsNfcListening = _nfc.IsListening;
-        Log("تم إيقاف NFC Scan");
     }
 }

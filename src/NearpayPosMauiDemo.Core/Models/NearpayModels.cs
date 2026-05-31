@@ -85,19 +85,3 @@ public sealed record NearpayOperationResult<T>(
     T? Data = default,
     Exception? Exception = null
 );
-
-// -----------------
-// NFC (Demo helpers)
-// -----------------
-
-public sealed record NfcTagInfo(
-    string? TagIdHex,
-    IReadOnlyList<string> TechList,
-    string? NdefText = null
-);
-
-public sealed class NfcTagDiscoveredEventArgs : EventArgs
-{
-    public NfcTagDiscoveredEventArgs(NfcTagInfo tag) => Tag = tag;
-    public NfcTagInfo Tag { get; }
-}

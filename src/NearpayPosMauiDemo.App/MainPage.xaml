@@ -302,20 +302,6 @@
                         <Button Grid.Column="2" Text="مسح السجل" Style="{DynamicResource PrimaryButton}" Command="{Binding ClearLogCommand}" />
                     </Grid>
 
-                    <!-- NFC -->
-                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
-                        <Button Grid.Column="0"
-                                Text="بدء NFC Scan"
-                                Style="{DynamicResource PrimaryButton}"
-                                Command="{Binding StartNfcScanCommand}" />
-                        <Button Grid.Column="1"
-                                Text="إيقاف NFC Scan"
-                                Style="{DynamicResource DangerButton}"
-                                Command="{Binding StopNfcScanCommand}" />
-                    </Grid>
-                    <Label Text="{Binding IsNfcListening, StringFormat='NFC Scan مفعل: {0}'}"
-                           Style="{DynamicResource CaptionStyle}" />
-
                     <Label Text="الحالة" Style="{DynamicResource SectionTitleStyle}" />
                     <Label Text="{Binding StatusMessage}" />
 

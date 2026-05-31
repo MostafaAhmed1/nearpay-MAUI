@@ -20,10 +20,8 @@ public static class MauiProgram
 
 #if ANDROID
 		builder.Services.AddSingleton<INearpayService, Platforms.Android.Services.NearpayServiceAndroid>();
-		builder.Services.AddSingleton<INfcReaderService, Platforms.Android.Services.NfcReaderServiceAndroid>();
 #else
 		builder.Services.AddSingleton<INearpayService, NearpayServiceStub>();
-		builder.Services.AddSingleton<INfcReaderService, NfcReaderServiceStub>();
 #endif
 
 		builder.Services.AddSingleton<MainPageViewModel>();
