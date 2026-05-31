@@ -2,178 +2,218 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="NearpayPosMauiDemo.App.MainPage"
+             FlowDirection="RightToLeft"
              Title="NearPay POS Demo">
 
-    <ContentPage.Resources>
-        <ResourceDictionary>
-            <Style x:Key="FieldBorderStyle" TargetType="Border">
-                <Setter Property="Stroke" Value="#808080" />
-                <Setter Property="StrokeThickness" Value="1" />
-                <Setter Property="StrokeShape" Value="RoundRectangle 8" />
-                <Setter Property="Padding" Value="8,4" />
-                <Setter Property="BackgroundColor" Value="Transparent" />
-            </Style>
-
-            <Style x:Key="FieldEntryStyle" TargetType="Entry">
-                <Setter Property="BackgroundColor" Value="Transparent" />
-                <Setter Property="ClearButtonVisibility" Value="WhileEditing" />
-            </Style>
-
-            <Style x:Key="FieldPickerStyle" TargetType="Picker">
-                <Setter Property="BackgroundColor" Value="Transparent" />
-            </Style>
-        </ResourceDictionary>
-    </ContentPage.Resources>
-
     <ScrollView>
-        <VerticalStackLayout Padding="16" Spacing="12">
+        <VerticalStackLayout Padding="16" Spacing="14">
 
-            <Frame Padding="12" CornerRadius="12">
-                <VerticalStackLayout Spacing="8">
-                    <Label Text="إعداد NearPay" FontAttributes="Bold" />
+            <!-- Header -->
+            <Border Style="{StaticResource CardBorderStyle}"
+                    BackgroundColor="{StaticResource Primary}"
+                    StrokeThickness="0">
+                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12" VerticalOptions="Center">
+                    <Border WidthRequest="44" HeightRequest="44"
+                            StrokeThickness="0"
+                            BackgroundColor="#FFFFFF"
+                            StrokeShape="RoundRectangle 12"
+                            VerticalOptions="Center"
+                            HorizontalOptions="Center">
+                        <Label Text="NP"
+                               FontFamily="OpenSansSemibold"
+                               TextColor="{StaticResource Primary}"
+                               HorizontalTextAlignment="Center"
+                               VerticalTextAlignment="Center"/>
+                    </Border>
 
-                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="8">
-                        <Label Grid.Row="0" Grid.Column="0" Text="Environment" />
-                        <Border Grid.Row="0" Grid.Column="1" Style="{StaticResource FieldBorderStyle}">
-                            <Picker Style="{StaticResource FieldPickerStyle}"
-                                    ItemsSource="{Binding EnvironmentOptions}"
-                                    SelectedItem="{Binding SelectedEnvironment}" />
-                        </Border>
+                    <VerticalStackLayout Grid.Column="1" Spacing="2">
+                        <Label Text="NearPay POS Demo"
+                               FontFamily="OpenSansSemibold"
+                               FontSize="18"
+                               TextColor="White" />
+                        <Label Text="واجهة اختبار احترافية (شاشة واحدة)"
+                               Style="{StaticResource CaptionStyle}"
+                               TextColor="#E9F0F7" />
+                    </VerticalStackLayout>
+                </Grid>
+            </Border>
 
-                        <Label Grid.Row="1" Grid.Column="0" Text="Auth Mode" />
-                        <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource FieldBorderStyle}">
-                            <Picker Style="{StaticResource FieldPickerStyle}"
-                                    ItemsSource="{Binding AuthModeOptions}"
-                                    SelectedItem="{Binding SelectedAuthMode}" />
-                        </Border>
+            <!-- Amount (primary) -->
+            <Border Style="{StaticResource CardBorderStyle}">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="المبلغ" Style="{StaticResource SectionTitleStyle}" />
+                    <Label Text="أدخل القيمة بالـ minor units: مثال 1455 = 14.55"
+                           Style="{StaticResource CaptionStyle}" />
 
-                        <Label Grid.Row="2" Grid.Column="0" Text="Auth Value" />
-                        <Border Grid.Row="2" Grid.Column="1" Style="{StaticResource FieldBorderStyle}">
-                            <Entry Style="{StaticResource FieldEntryStyle}"
-                                   Placeholder="JWT / Email / Mobile"
-                                   Text="{Binding AuthValue}" />
-                        </Border>
+                    <Border Style="{StaticResource FieldBorderStyle}">
+                        <Entry Style="{StaticResource AmountEntryStyle}"
+                               Keyboard="Numeric"
+                               Text="{Binding AmountMinor}"
+                               FlowDirection="LeftToRight" />
+                    </Border>
 
-                        <Label Grid.Row="3" Grid.Column="0" Text="TID (اختياري)" />
-                        <Border Grid.Row="3" Grid.Column="1" Style="{StaticResource FieldBorderStyle}">
-                            <Entry Style="{StaticResource FieldEntryStyle}"
-                                   Placeholder="PS239210"
-                                   Text="{Binding Tid}" />
-                        </Border>
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <VerticalStackLayout Spacing="6">
+                            <Label Text="Customer Ref (اختياري)" Style="{StaticResource FieldLabelStyle}" />
+                            <Border Style="{StaticResource FieldBorderStyle}">
+                                <Entry Style="{StaticResource FieldEntryStyle}"
+                                       Placeholder="أي رقم/نص"
+                                       Text="{Binding CustomerReferenceNumber}" />
+                            </Border>
+                        </VerticalStackLayout>
 
-                        <Label Grid.Row="4" Grid.Column="0" Text="Locale" />
-                        <Border Grid.Row="4" Grid.Column="1" Style="{StaticResource FieldBorderStyle}">
-                            <Entry Style="{StaticResource FieldEntryStyle}"
-                                   Placeholder="ar-SA"
-                                   Text="{Binding Locale}" />
-                        </Border>
+                        <VerticalStackLayout Spacing="6">
+                            <Label Text="Finish Timeout (sec)" Style="{StaticResource FieldLabelStyle}" />
+                            <Border Style="{StaticResource FieldBorderStyle}">
+                                <Entry Style="{StaticResource FieldEntryStyle}"
+                                       Keyboard="Numeric"
+                                       Text="{Binding FinishTimeoutSeconds}"
+                                       FlowDirection="LeftToRight" />
+                            </Border>
+                        </VerticalStackLayout>
                     </Grid>
-
-                    <HorizontalStackLayout Spacing="10">
-                        <Button Text="Initialize" Command="{Binding InitializeCommand}" />
-                        <Button Text="Setup" Command="{Binding SetupCommand}" />
-                        <Button Text="Clear Log" Command="{Binding ClearLogCommand}" />
-                    </HorizontalStackLayout>
-                </VerticalStackLayout>
-            </Frame>
-
-            <Frame Padding="12" CornerRadius="12">
-                <VerticalStackLayout Spacing="8">
-                    <Label Text="بيانات العملية" FontAttributes="Bold" />
-
-                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="8">
-                        <Label Grid.Row="0" Grid.Column="0" Text="Amount (minor)" />
-                        <Border Grid.Row="0" Grid.Column="1" Style="{StaticResource FieldBorderStyle}">
-                            <Entry Style="{StaticResource FieldEntryStyle}"
-                                   Keyboard="Numeric"
-                                   Text="{Binding AmountMinor}" />
-                        </Border>
-
-                        <Label Grid.Row="1" Grid.Column="0" Text="Customer Ref (اختياري)" />
-                        <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource FieldBorderStyle}">
-                            <Entry Style="{StaticResource FieldEntryStyle}"
-                                   Placeholder="أي رقم/نص"
-                                   Text="{Binding CustomerReferenceNumber}" />
-                        </Border>
-
-                        <Label Grid.Row="2" Grid.Column="0" Text="Transaction UUID" />
-                        <Border Grid.Row="2" Grid.Column="1" Style="{StaticResource FieldBorderStyle}">
-                            <Entry Style="{StaticResource FieldEntryStyle}"
-                                   Placeholder="لـ Refund/Reverse"
-                                   Text="{Binding TransactionUuid}" />
-                        </Border>
-
-                        <Label Grid.Row="3" Grid.Column="0" Text="Admin PIN (اختياري)" />
-                        <Border Grid.Row="3" Grid.Column="1" Style="{StaticResource FieldBorderStyle}">
-                            <Entry Style="{StaticResource FieldEntryStyle}"
-                                   Placeholder="0000"
-                                   IsPassword="True"
-                                   Text="{Binding AdminPin}" />
-                        </Border>
-                    </Grid>
-
-                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="8">
-                        <Label Grid.Row="0" Grid.Column="0" Text="Finish Timeout (sec)" />
-                        <Border Grid.Row="0" Grid.Column="1" Style="{StaticResource FieldBorderStyle}">
-                            <Entry Style="{StaticResource FieldEntryStyle}"
-                                   Keyboard="Numeric"
-                                   Text="{Binding FinishTimeoutSeconds}" />
-                        </Border>
-
-                        <HorizontalStackLayout Grid.Row="1" Grid.ColumnSpan="2" Spacing="12">
-                            <HorizontalStackLayout Spacing="6">
-                                <CheckBox IsChecked="{Binding EnableReceiptUi}" />
-                                <Label Text="Receipt UI" VerticalTextAlignment="Center" />
-                            </HorizontalStackLayout>
-
-                            <HorizontalStackLayout Spacing="6">
-                                <CheckBox IsChecked="{Binding EnableReversal}" />
-                                <Label Text="Reversal" VerticalTextAlignment="Center" />
-                            </HorizontalStackLayout>
-
-                            <HorizontalStackLayout Spacing="6">
-                                <CheckBox IsChecked="{Binding EnableEditableRefundAmountUi}" />
-                                <Label Text="Edit Refund UI" VerticalTextAlignment="Center" />
-                            </HorizontalStackLayout>
-
-                            <HorizontalStackLayout Spacing="6">
-                                <CheckBox IsChecked="{Binding EnableUiDismiss}" />
-                                <Label Text="UI Dismiss" VerticalTextAlignment="Center" />
-                            </HorizontalStackLayout>
-                        </HorizontalStackLayout>
-                    </Grid>
-                </VerticalStackLayout>
-            </Frame>
-
-            <Frame Padding="12" CornerRadius="12">
-                <VerticalStackLayout Spacing="8">
-                    <Label Text="تنفيذ العمليات" FontAttributes="Bold" />
-                    <Label Text="كل زر خاص بطريقة من طرق NearPay المتاحة في SDK." FontSize="12" Opacity="0.8" />
 
                     <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="10">
-                        <Button Grid.Row="0" Grid.Column="0" Text="Purchase" Command="{Binding PurchaseCommand}" />
-                        <Button Grid.Row="0" Grid.Column="1" Text="Refund" Command="{Binding RefundCommand}" />
-                        <Button Grid.Row="1" Grid.Column="0" Text="Reverse" Command="{Binding ReverseCommand}" />
-                        <Button Grid.Row="1" Grid.Column="1" Text="Reconcile" Command="{Binding ReconcileCommand}" />
+                        <Button Grid.Row="0" Grid.Column="0"
+                                Text="شراء (Purchase)"
+                                Style="{StaticResource SuccessButton}"
+                                Command="{Binding PurchaseCommand}" />
+                        <Button Grid.Row="0" Grid.Column="1"
+                                Text="استرجاع (Refund)"
+                                Style="{StaticResource WarningButton}"
+                                Command="{Binding RefundCommand}" />
+                        <Button Grid.Row="1" Grid.Column="0"
+                                Text="عكس (Reverse)"
+                                Style="{StaticResource DangerButton}"
+                                Command="{Binding ReverseCommand}" />
+                        <Button Grid.Row="1" Grid.Column="1"
+                                Text="تسوية (Reconcile)"
+                                Style="{StaticResource PrimaryButton}"
+                                Command="{Binding ReconcileCommand}" />
                     </Grid>
                 </VerticalStackLayout>
-            </Frame>
+            </Border>
 
-            <Frame Padding="12" CornerRadius="12">
-                <VerticalStackLayout Spacing="8">
-                    <Label Text="الحالة" FontAttributes="Bold" />
+            <!-- Advanced fields -->
+            <Border Style="{StaticResource CardBorderStyle}">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="إعدادات الدخول (Authentication)" Style="{StaticResource SectionTitleStyle}" />
+                    <Label Text="استخدم UserEnter للتجربة السريعة، أو JWT/Email/Mobile حسب إعداد حساب NearPay."
+                           Style="{StaticResource CaptionStyle}" />
+
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10" RowSpacing="10">
+                        <VerticalStackLayout Grid.Column="0" Spacing="6">
+                            <Label Text="Environment" Style="{StaticResource FieldLabelStyle}" />
+                            <Border Style="{StaticResource FieldBorderStyle}">
+                                <Picker Style="{StaticResource FieldPickerStyle}"
+                                        ItemsSource="{Binding EnvironmentOptions}"
+                                        SelectedItem="{Binding SelectedEnvironment}" />
+                            </Border>
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.Column="1" Spacing="6">
+                            <Label Text="Auth Mode" Style="{StaticResource FieldLabelStyle}" />
+                            <Border Style="{StaticResource FieldBorderStyle}">
+                                <Picker Style="{StaticResource FieldPickerStyle}"
+                                        ItemsSource="{Binding AuthModeOptions}"
+                                        SelectedItem="{Binding SelectedAuthMode}" />
+                            </Border>
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.ColumnSpan="2" Spacing="6">
+                            <Label Text="Auth Value (JWT / Email / Mobile)" Style="{StaticResource FieldLabelStyle}" />
+                            <Border Style="{StaticResource FieldBorderStyle}">
+                                <Entry Style="{StaticResource FieldEntryStyle}"
+                                       Placeholder="JWT / Email / Mobile"
+                                       Text="{Binding AuthValue}"
+                                       FlowDirection="LeftToRight" />
+                            </Border>
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.Column="0" Spacing="6">
+                            <Label Text="Locale" Style="{StaticResource FieldLabelStyle}" />
+                            <Border Style="{StaticResource FieldBorderStyle}">
+                                <Entry Style="{StaticResource FieldEntryStyle}"
+                                       Placeholder="ar-SA"
+                                       Text="{Binding Locale}"
+                                       FlowDirection="LeftToRight" />
+                            </Border>
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.Column="1" Spacing="6">
+                            <Label Text="TID (اختياري)" Style="{StaticResource FieldLabelStyle}" />
+                            <Border Style="{StaticResource FieldBorderStyle}">
+                                <Entry Style="{StaticResource FieldEntryStyle}"
+                                       Placeholder="PS239210"
+                                       Text="{Binding Tid}"
+                                       FlowDirection="LeftToRight" />
+                            </Border>
+                        </VerticalStackLayout>
+                    </Grid>
+
+                    <Label Text="حقول Refund / Reverse" Style="{StaticResource SectionTitleStyle}" />
+
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10" RowSpacing="10">
+                        <VerticalStackLayout Grid.ColumnSpan="2" Spacing="6">
+                            <Label Text="Transaction UUID" Style="{StaticResource FieldLabelStyle}" />
+                            <Border Style="{StaticResource FieldBorderStyle}">
+                                <Entry Style="{StaticResource FieldEntryStyle}"
+                                       Placeholder="مطلوب لـ Refund/Reverse"
+                                       Text="{Binding TransactionUuid}"
+                                       FlowDirection="LeftToRight" />
+                            </Border>
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.Column="0" Spacing="6">
+                            <Label Text="Admin PIN (اختياري)" Style="{StaticResource FieldLabelStyle}" />
+                            <Border Style="{StaticResource FieldBorderStyle}">
+                                <Entry Style="{StaticResource FieldEntryStyle}"
+                                       Placeholder="0000"
+                                       IsPassword="True"
+                                       Text="{Binding AdminPin}"
+                                       FlowDirection="LeftToRight" />
+                            </Border>
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.Column="1" Spacing="6">
+                            <Label Text="خيارات الواجهة" Style="{StaticResource FieldLabelStyle}" />
+                            <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="Auto,*" RowSpacing="6" ColumnSpacing="8">
+                                <CheckBox Grid.Row="0" Grid.Column="0" IsChecked="{Binding EnableReceiptUi}" />
+                                <Label Grid.Row="0" Grid.Column="1" Text="Receipt UI" VerticalTextAlignment="Center" />
+                                <CheckBox Grid.Row="1" Grid.Column="0" IsChecked="{Binding EnableUiDismiss}" />
+                                <Label Grid.Row="1" Grid.Column="1" Text="UI Dismiss" VerticalTextAlignment="Center" />
+                            </Grid>
+                        </VerticalStackLayout>
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Setup buttons + logs -->
+            <Border Style="{StaticResource CardBorderStyle}">
+                <VerticalStackLayout Spacing="10">
+                    <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
+                        <Button Grid.Column="0" Text="تهيئة" Style="{StaticResource PrimaryButton}" Command="{Binding InitializeCommand}" />
+                        <Button Grid.Column="1" Text="Setup" Style="{StaticResource PrimaryButton}" Command="{Binding SetupCommand}" />
+                        <Button Grid.Column="2" Text="مسح السجل" Style="{StaticResource PrimaryButton}" Command="{Binding ClearLogCommand}" />
+                    </Grid>
+
+                    <Label Text="الحالة" Style="{StaticResource SectionTitleStyle}" />
                     <Label Text="{Binding StatusMessage}" />
 
-                    <Label Text="Log" FontAttributes="Bold" />
-                    <CollectionView ItemsSource="{Binding Logs}" HeightRequest="240">
+                    <Label Text="السجل (Log)" Style="{StaticResource SectionTitleStyle}" />
+                    <CollectionView ItemsSource="{Binding Logs}" HeightRequest="260">
                         <CollectionView.ItemTemplate>
                             <DataTemplate>
-                                <Label Text="{Binding .}" FontSize="12" LineBreakMode="TailTruncation" />
+                                <Border StrokeThickness="0" Padding="8,6"
+                                        BackgroundColor="{AppThemeBinding Light={StaticResource Secondary}, Dark={StaticResource Gray900}}"
+                                        StrokeShape="RoundRectangle 10">
+                                    <Label Text="{Binding .}" FontSize="12" LineBreakMode="WordWrap" />
+                                </Border>
                             </DataTemplate>
                         </CollectionView.ItemTemplate>
                     </CollectionView>
                 </VerticalStackLayout>
-            </Frame>
+            </Border>
         </VerticalStackLayout>
     </ScrollView>
 </ContentPage>
