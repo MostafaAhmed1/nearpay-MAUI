@@ -25,6 +25,9 @@ artifacts/
 *.key
 *private-key*.pem
 
+# Node tooling (JWT helper)
+tools/jwt/node_modules/
+
 # OS
 Thumbs.db
 Desktop.ini

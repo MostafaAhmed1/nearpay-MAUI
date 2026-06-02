@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Maui.ApplicationModel;
 using NearpayPosMauiDemo.Core.Abstractions;
 using NearpayPosMauiDemo.Core.Models;
 
@@ -113,11 +114,45 @@ public partial class MainPageViewModel : ObservableObject
     [RelayCommand]
     private async Task Setup(CancellationToken ct)
     {
+        if (!_nearpay.IsInitialized)
+        {
+            Log("الرجاء الضغط على (تهيئة) أولاً قبل (تسجيل الجهاز)");
+            return;
+        }
+
         await RunBusyAsync("جاري تنفيذ Setup...", async innerCt =>
         {
             var result = await _nearpay.SetupAsync(innerCt);
             Log(result.IsSuccess ? $"Setup OK: {result.Message}" : $"Setup Failed: {result.Message}");
+
+            if (!result.IsSuccess)
+            {
+                // إرشادات مختصرة لأكثر أسباب الفشل شيوعاً
+                Log("تأكد من: (1) تسجيل Package Name في Dashboard (2) إنشاء Terminal وأخذ Tid (3) Invite user ثم قبول الدعوة (4) تثبيت Payment Plugin عند الطلب.");
+            }
         }, ct);
+    }
+
+    [RelayCommand]
+    private async Task ShowHelp(CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+
+        var text =
+            "التهيئة = إنشاء كائن NearPay داخل التطبيق.\n" +
+            "تسجيل الجهاز (Setup) = يثبت/يفعّل Payment Plugin ويسجّل دخول المستخدم/يربطه بالـ Terminal.\n\n" +
+            "المطلوب قبل Setup:\n" +
+            "1) Dashboard (Sandbox): Apps → Add App وسجّل Package Name.\n" +
+            "2) Dashboard: Terminals → Create terminal وخذ Tid.\n" +
+            "3) Terminals → Access → Invite user (بالإيميل/الموبايل) ثم تأكد أنه قبل الدعوة.\n" +
+            "4) في التطبيق اختر Auth Mode:\n" +
+            "- UserEnter: الأسهل للتجربة.\n" +
+            "- Email/Mobile: لازم نفس المستخدم يكون Invited.\n" +
+            "- JWT: تولّده من private-key.pem (لا يوضع داخل التطبيق) ثم تلصق الـ token داخل Auth Value.\n\n" +
+            "بعدها: اضغط (تهيئة) ثم (تسجيل الجهاز) ثم Purchase.";
+
+        await MainThread.InvokeOnMainThreadAsync(() =>
+            Application.Current!.MainPage!.DisplayAlert("مساعدة سريعة", text, "تمام"));
     }
 
     [RelayCommand]

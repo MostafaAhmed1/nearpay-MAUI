@@ -325,11 +325,16 @@
                     <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
                         <Button Grid.Column="0" Text="تهيئة" Style="{DynamicResource PrimaryButton}" Command="{Binding InitializeCommand}"
                                 IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}" />
-                        <Button Grid.Column="1" Text="Setup" Style="{DynamicResource PrimaryButton}" Command="{Binding SetupCommand}"
+                        <Button Grid.Column="1" Text="تسجيل الجهاز" Style="{DynamicResource PrimaryButton}" Command="{Binding SetupCommand}"
                                 IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}" />
                         <Button Grid.Column="2" Text="مسح السجل" Style="{DynamicResource PrimaryButton}" Command="{Binding ClearLogCommand}"
                                 IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}" />
                     </Grid>
+
+                    <Button Text="مساعدة"
+                            Style="{DynamicResource PrimaryButton}"
+                            Command="{Binding ShowHelpCommand}"
+                            IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}" />
 
                     <Label Text="الحالة" Style="{DynamicResource SectionTitleStyle}" />
                     <Label Text="{Binding StatusMessage}" />
