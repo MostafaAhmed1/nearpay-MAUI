@@ -183,7 +183,7 @@ public sealed class NearpayServiceAndroid : INearpayService
             => tcs.TrySetResult(new NearpayOperationResult(true, "تم تسجيل الجهاز بنجاح"));
 
         public void OnSetupFailed(SetupFailure setupFailure)
-            => tcs.TrySetResult(new NearpayOperationResult(false, DescribeSetupFailure(setupFailure)));
+            => tcs.TrySetResult(new NearpayOperationResult(false, NearpayFailureFormatter.Describe(setupFailure)));
     }
 
     private sealed class PurchaseListener(TaskCompletionSource<NearpayOperationResult<NearpayTransactionResult>> tcs)
@@ -198,7 +198,7 @@ public sealed class NearpayServiceAndroid : INearpayService
         public void OnPurchaseFailed(PurchaseFailure purchaseFailure)
             => tcs.TrySetResult(new NearpayOperationResult<NearpayTransactionResult>(
                 false,
-                purchaseFailure.ToString() ?? "Purchase failed"));
+                NearpayFailureFormatter.Describe(purchaseFailure)));
     }
 
     private sealed class RefundListener(TaskCompletionSource<NearpayOperationResult<NearpayTransactionResult>> tcs)
@@ -213,7 +213,7 @@ public sealed class NearpayServiceAndroid : INearpayService
         public void OnRefundFailed(RefundFailure refundFailure)
             => tcs.TrySetResult(new NearpayOperationResult<NearpayTransactionResult>(
                 false,
-                refundFailure.ToString() ?? "Refund failed"));
+                NearpayFailureFormatter.Describe(refundFailure)));
     }
 
     private sealed class ReversalListener(TaskCompletionSource<NearpayOperationResult<NearpayTransactionResult>> tcs)
@@ -228,7 +228,7 @@ public sealed class NearpayServiceAndroid : INearpayService
         public void OnReversalFailed(ReversalFailure reversalFailure)
             => tcs.TrySetResult(new NearpayOperationResult<NearpayTransactionResult>(
                 false,
-                reversalFailure.ToString() ?? "Reverse failed"));
+                NearpayFailureFormatter.Describe(reversalFailure)));
     }
 
     private sealed class ReconcileListener(TaskCompletionSource<NearpayOperationResult<NearpayReconcileResult>> tcs)
@@ -246,44 +246,8 @@ public sealed class NearpayServiceAndroid : INearpayService
         public void OnReconcileFailed(ReconcileFailure reconcileFailure)
             => tcs.TrySetResult(new NearpayOperationResult<NearpayReconcileResult>(
                 false,
-                reconcileFailure.ToString() ?? "Reconcile failed"));
+                NearpayFailureFormatter.Describe(reconcileFailure)));
     }
-
-    private static string DescribeSetupFailure(SetupFailure failure)
-    {
-        return failure switch
-        {
-            SetupFailure.NotInstalled => "لم يتم العثور على NearPay Payment Plugin. ثبّت/حدّث الـ Plugin ثم أعد المحاولة.",
-            SetupFailure.AlreadyInstalled => "Payment Plugin مثبت بالفعل. جرّب إعادة فتح التطبيق ثم تسجيل الجهاز مرة أخرى.",
-            SetupFailure.AuthenticationFailed auth => $"فشل التوثيق: {auth.Message}",
-            SetupFailure.InvalidStatus invalid => "حالة الجهاز غير مناسبة:\n- " +
-                                                 string.Join("\n- ", invalid.Status.Select(MapStatusCheckError)),
-            SetupFailure.GeneralFailure => "فشل عام أثناء Setup. (غالباً بسبب اتصال/صلاحيات/إعدادات Dashboard). جرّب زر (مساعدة) داخل التطبيق واتبع النقاط.",
-            _ => failure.ToString() ?? "Setup failed"
-        };
-    }
-
-    private static string MapStatusCheckError(StatusCheckError err)
-        => err?.ToString() switch
-        {
-            "CONNECTIVITY_UNAVAILABLE" => "لا يوجد اتصال إنترنت فعّال.",
-            "VPN_DETECTED" => "تم اكتشاف VPN. أوقف الـ VPN ثم أعد المحاولة.",
-            "DEV_MODE_ON" => "وضع المطوّر (Developer options) مفعّل. أوقفه ثم أعد المحاولة.",
-            "LOCATION_PERMISSION_MISSING" => "صلاحية الموقع غير مُعطاة للتطبيق.",
-            "LOCATION_MISSING" => "خدمة الموقع (Location) غير مفعّلة.",
-            "NFC_DISABLED" => "NFC غير مفعّل.",
-            "NFC_NOT_FOUND" => "لا يوجد NFC في هذا الجهاز.",
-            "NOT_INSTALLED" => "Payment Plugin غير مثبت.",
-            "UPDATED_REQUIRED" => "يلزم تحديث Payment Plugin.",
-            "NOT_SECURE" => "الجهاز غير آمن (قد يكون Root/Bootloader/إعدادات أمان).",
-            "UNSUPPORTED_DEVICE" => "الجهاز غير مدعوم.",
-            "UNSUPPORTED_SDK_VERSION" => "إصدار SDK/Android غير مدعوم.",
-            "OPERATION_NOT_SUPPORTED" => "العملية غير مدعومة على هذا الجهاز.",
-            "TERMINAL_UPDATING" => "الـ Terminal في حالة تحديث. انتظر ثم أعد المحاولة.",
-            "TERMINAL_RECONCILING" => "الـ Terminal في حالة تسوية. أنهِ التسوية ثم أعد المحاولة.",
-            "PHONE_STATE_DISABLED" => "إعدادات Phone State/Sim غير مناسبة على الجهاز.",
-            _ => err?.ToString() ?? "Unknown status error"
-        };
 
     private static List<string> GetPreflightIssues(Activity activity)
     {

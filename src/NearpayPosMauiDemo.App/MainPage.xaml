@@ -336,6 +336,11 @@
                             Command="{Binding PrepareDeviceCommand}"
                             IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}" />
 
+                    <Button Text="إعدادات NearPay"
+                            Style="{DynamicResource PrimaryButton}"
+                            Command="{Binding OpenSettingsCommand}"
+                            IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}" />
+
                     <Button Text="مساعدة"
                             Style="{DynamicResource PrimaryButton}"
                             Command="{Binding ShowHelpCommand}"

@@ -2,17 +2,17 @@
 
 public partial class App : Application
 {
-	private readonly MainPage _mainPage;
+	private readonly AppShell _shell;
 
-	public App(MainPage mainPage)
+	public App(AppShell shell)
 	{
 		InitializeComponent();
-		_mainPage = mainPage;
+		_shell = shell;
 	}
 
 	protected override Window CreateWindow(IActivationState? activationState)
 	{
-		// التطبيق شاشة واحدة للتجربة
-		return new Window(_mainPage);
+		// استخدام Shell لتمكين صفحة إعدادات منفصلة بدون كسر وظائف الصفحة الرئيسية
+		return new Window(_shell);
 	}
 }

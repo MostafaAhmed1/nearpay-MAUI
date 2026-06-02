@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.ApplicationModel.Communication;
+using NearpayPosMauiDemo.App.Services;
 using NearpayPosMauiDemo.Core.Abstractions;
 using NearpayPosMauiDemo.Core.Models;
 
@@ -11,10 +12,12 @@ namespace NearpayPosMauiDemo.App.Presentation.Main;
 public partial class MainPageViewModel : ObservableObject
 {
     private readonly INearpayService _nearpay;
+    private readonly INearpaySettingsStore _settingsStore;
 
-    public MainPageViewModel(INearpayService nearpay)
+    public MainPageViewModel(INearpayService nearpay, INearpaySettingsStore settingsStore)
     {
         _nearpay = nearpay;
+        _settingsStore = settingsStore;
 
         EnvironmentOptions = Enum.GetNames(typeof(NearpayEnvironment));
         AuthModeOptions = Enum.GetNames(typeof(NearpayAuthMode));
@@ -28,6 +31,8 @@ public partial class MainPageViewModel : ObservableObject
         EnableReversal = true;
         EnableEditableRefundAmountUi = true;
         EnableUiDismiss = true;
+
+        _ = LoadSavedSettingsAsync();
     }
 
     public string[] EnvironmentOptions { get; }
@@ -94,6 +99,25 @@ public partial class MainPageViewModel : ObservableObject
 
     private static NearpayAuthMode ParseAuthMode(string value)
         => Enum.TryParse<NearpayAuthMode>(value, out var mode) ? mode : NearpayAuthMode.UserEnter;
+
+    private async Task LoadSavedSettingsAsync()
+    {
+        try
+        {
+            var s = await _settingsStore.LoadAsync();
+            SelectedEnvironment = s.Environment;
+            SelectedAuthMode = s.AuthMode;
+            AuthValue = s.AuthValue ?? "";
+            Tid = s.Tid ?? "";
+            Locale = string.IsNullOrWhiteSpace(s.Locale) ? "ar-SA" : s.Locale;
+
+            Log("تم تحميل إعدادات NearPay المحفوظة (إن وُجدت).");
+        }
+        catch
+        {
+            // ignore
+        }
+    }
 
     [RelayCommand]
     private async Task Initialize(CancellationToken ct)
@@ -292,5 +316,12 @@ public partial class MainPageViewModel : ObservableObject
     {
         Logs.Clear();
         StatusMessage = "تم مسح السجل";
+    }
+
+    [RelayCommand]
+    private async Task OpenSettings(CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        await Shell.Current.GoToAsync(nameof(Presentation.Settings.NearpaySettingsPage));
     }
 }
