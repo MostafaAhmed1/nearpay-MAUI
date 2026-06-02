@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Maui.ApplicationModel;
+using Microsoft.Maui.ApplicationModel.DataTransfer;
 using Microsoft.Maui.ApplicationModel.Communication;
 using NearpayPosMauiDemo.App.Services;
 using NearpayPosMauiDemo.Core.Abstractions;
@@ -58,6 +59,7 @@ public partial class MainPageViewModel : ObservableObject
     [ObservableProperty] private string statusMessage = "جاهز";
     [ObservableProperty] private bool isBusy;
     [ObservableProperty] private string busyMessage = "";
+    [ObservableProperty] private string logText = "";
 
 
 
@@ -68,6 +70,7 @@ public partial class MainPageViewModel : ObservableObject
         var line = $"[{DateTime.Now:HH:mm:ss}] {message}";
         Logs.Insert(0, line);
         StatusMessage = message;
+        LogText = string.IsNullOrEmpty(LogText) ? line : (line + Environment.NewLine + LogText);
     }
 
     private async Task RunBusyAsync(string message, Func<CancellationToken, Task> action, CancellationToken ct)
@@ -109,8 +112,6 @@ public partial class MainPageViewModel : ObservableObject
             AuthValue = s.AuthValue ?? "";
             Tid = s.Tid ?? "";
             Locale = string.IsNullOrWhiteSpace(s.Locale) ? "ar-SA" : s.Locale;
-
-            Log("تم تحميل إعدادات NearPay المحفوظة (إن وُجدت).");
         }
         catch
         {
@@ -331,13 +332,77 @@ public partial class MainPageViewModel : ObservableObject
     private void ClearLog()
     {
         Logs.Clear();
-        StatusMessage = "تم مسح السجل";
+        LogText = "";
+        StatusMessage = "Cleared";
     }
 
     [RelayCommand]
     private async Task OpenSettings(CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
-        await Shell.Current.GoToAsync(nameof(Presentation.Settings.NearpaySettingsPage));
+        try
+        {
+            await Shell.Current.GoToAsync("//NearpaySettingsPage");
+        }
+        catch (Exception ex)
+        {
+            Log(ex.ToString());
+        }
+    }
+
+    [RelayCommand]
+    private async Task CopyLog(CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        await Clipboard.Default.SetTextAsync(LogText ?? string.Empty);
+    }
+
+    [RelayCommand]
+    private async Task RunOneButtonPurchase(CancellationToken ct)
+    {
+        // تجربة برمجية واحدة: Initialize -> deviceCompatibility -> getUserSession -> Setup -> Purchase
+        // تعتمد على الإعدادات المحفوظة محلياً (وليست حقول الواجهة).
+        await RunBusyAsync("Running...", async innerCt =>
+        {
+            var s = await _settingsStore.LoadAsync();
+
+            Log("STEP: Initialize");
+            var initReq = new NearpayInitializationRequest(
+                Environment: ParseEnv(s.Environment),
+                AuthMode: ParseAuthMode(s.AuthMode),
+                AuthValue: s.AuthValue ?? string.Empty,
+                Tid: s.Tid ?? string.Empty,
+                Locale: s.Locale ?? "ar-SA");
+            await _nearpay.InitializeAsync(initReq, innerCt);
+            Log("InitializeAsync: OK");
+
+            Log("STEP: DeviceCompatibility");
+            var comp = await _nearpay.DeviceCompatibilityAsync(innerCt);
+            Log(comp.Message);
+
+            Log("STEP: GetUserSession");
+            var sess = await _nearpay.GetUserSessionAsync(innerCt);
+            Log(sess.Message);
+
+            Log("STEP: Setup");
+            var setup = await _nearpay.SetupAsync(innerCt);
+            Log(setup.Message);
+            if (!setup.IsSuccess) return;
+
+            Log("STEP: Purchase");
+            var purchaseReq = new NearpayPurchaseRequest(
+                AmountMinor: 100, // 1.00
+                CustomerReferenceNumber: "",
+                EnableReceiptUi: true,
+                EnableReversal: true,
+                FinishTimeoutSeconds: 60,
+                RequestId: Guid.NewGuid(),
+                EnableUiDismiss: true);
+
+            var purchase = await _nearpay.PurchaseAsync(purchaseReq, innerCt);
+            Log(purchase.IsSuccess
+                ? (purchase.Data?.Raw ?? purchase.Data?.Summary ?? purchase.Message)
+                : purchase.Message);
+        }, ct);
     }
 }

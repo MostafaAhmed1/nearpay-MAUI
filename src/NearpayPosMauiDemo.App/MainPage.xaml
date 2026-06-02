@@ -354,6 +354,11 @@
                             Command="{Binding OpenSettingsCommand}"
                             IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}" />
 
+                    <Button Text="اختبار شراء (زر واحد)"
+                            Style="{DynamicResource SuccessButton}"
+                            Command="{Binding RunOneButtonPurchaseCommand}"
+                            IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}" />
+
                     <Button Text="مساعدة"
                             Style="{DynamicResource PrimaryButton}"
                             Command="{Binding ShowHelpCommand}"
@@ -363,17 +368,27 @@
                     <Label Text="{Binding StatusMessage}" />
 
                     <Label Text="السجل (Log)" Style="{DynamicResource SectionTitleStyle}" />
-                    <CollectionView ItemsSource="{Binding Logs}" HeightRequest="260">
-                        <CollectionView.ItemTemplate>
-                            <DataTemplate>
-                                <Border StrokeThickness="0" Padding="8,6"
-                                        BackgroundColor="{DynamicResource Secondary}"
-                                        StrokeShape="RoundRectangle 10">
-                                    <Label Text="{Binding .}" FontSize="12" LineBreakMode="WordWrap" />
-                                </Border>
-                            </DataTemplate>
-                        </CollectionView.ItemTemplate>
-                    </CollectionView>
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <Button Grid.Column="0"
+                                Text="نسخ السجل"
+                                Style="{DynamicResource PrimaryButton}"
+                                Command="{Binding CopyLogCommand}" />
+                        <Button Grid.Column="1"
+                                Text="مسح السجل"
+                                Style="{DynamicResource DangerButton}"
+                                Command="{Binding ClearLogCommand}" />
+                    </Grid>
+
+                    <Border StrokeThickness="1"
+                            Stroke="{DynamicResource CardStroke}"
+                            StrokeShape="RoundRectangle 12"
+                            Padding="10">
+                        <Editor Text="{Binding LogText}"
+                                IsReadOnly="True"
+                                AutoSize="TextChanges"
+                                HeightRequest="260"
+                                FlowDirection="LeftToRight" />
+                    </Border>
                 </VerticalStackLayout>
             </Border>
         </VerticalStackLayout>
