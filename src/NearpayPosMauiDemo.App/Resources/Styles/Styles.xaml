@@ -88,10 +88,13 @@
     <Style x:Key="FieldEntryStyle" TargetType="Entry">
         <Setter Property="BackgroundColor" Value="Transparent" />
         <Setter Property="ClearButtonVisibility" Value="WhileEditing" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource PrimaryDarkText}, Dark={StaticResource White}}" />
+        <Setter Property="PlaceholderColor" Value="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray300}}" />
     </Style>
 
     <Style x:Key="FieldPickerStyle" TargetType="Picker">
         <Setter Property="BackgroundColor" Value="Transparent" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource PrimaryDarkText}, Dark={StaticResource White}}" />
     </Style>
 
     <Style x:Key="AmountEntryStyle" TargetType="Entry">
