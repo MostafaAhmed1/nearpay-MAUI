@@ -1,4 +1,8 @@
 using Android.App;
+using Android.Net;
+using Android.Nfc;
+using Android.Provider;
+using AndroidX.Core.Content;
 using NearpayPosMauiDemo.Core.Abstractions;
 using NearpayPosMauiDemo.Core.Models;
 
@@ -43,6 +47,14 @@ public sealed class NearpayServiceAndroid : INearpayService
     public async Task<NearpayOperationResult> SetupAsync(CancellationToken ct = default)
     {
         var nearPay = EnsureInitialized();
+
+        // فحص متطلبات الجهاز قبل Setup لتفادي "GeneralFailure" الغامضة
+        if (Platform.CurrentActivity is not Activity activity)
+            return new NearpayOperationResult(false, "لا يوجد Activity حالي. أغلق التطبيق وافتحه ثم حاول مرة أخرى.");
+
+        var issues = GetPreflightIssues(activity);
+        if (issues.Count > 0)
+            return new NearpayOperationResult(false, "تعذر تسجيل الجهاز بسبب:\n- " + string.Join("\n- ", issues));
 
         var tcs = new TaskCompletionSource<NearpayOperationResult>(TaskCreationOptions.RunContinuationsAsynchronously);
         using var reg = ct.Register(() => tcs.TrySetCanceled(ct));
@@ -168,10 +180,10 @@ public sealed class NearpayServiceAndroid : INearpayService
         : Java.Lang.Object, ISetupListener
     {
         public void OnSetupCompleted()
-            => tcs.TrySetResult(new NearpayOperationResult(true, "Completed"));
+            => tcs.TrySetResult(new NearpayOperationResult(true, "تم تسجيل الجهاز بنجاح"));
 
         public void OnSetupFailed(SetupFailure setupFailure)
-            => tcs.TrySetResult(new NearpayOperationResult(false, setupFailure.ToString() ?? "Setup failed"));
+            => tcs.TrySetResult(new NearpayOperationResult(false, DescribeSetupFailure(setupFailure)));
     }
 
     private sealed class PurchaseListener(TaskCompletionSource<NearpayOperationResult<NearpayTransactionResult>> tcs)
@@ -235,5 +247,89 @@ public sealed class NearpayServiceAndroid : INearpayService
             => tcs.TrySetResult(new NearpayOperationResult<NearpayReconcileResult>(
                 false,
                 reconcileFailure.ToString() ?? "Reconcile failed"));
+    }
+
+    private static string DescribeSetupFailure(SetupFailure failure)
+    {
+        return failure switch
+        {
+            SetupFailure.NotInstalled => "لم يتم العثور على NearPay Payment Plugin. ثبّت/حدّث الـ Plugin ثم أعد المحاولة.",
+            SetupFailure.AlreadyInstalled => "Payment Plugin مثبت بالفعل. جرّب إعادة فتح التطبيق ثم تسجيل الجهاز مرة أخرى.",
+            SetupFailure.AuthenticationFailed auth => $"فشل التوثيق: {auth.Message}",
+            SetupFailure.InvalidStatus invalid => "حالة الجهاز غير مناسبة:\n- " +
+                                                 string.Join("\n- ", invalid.Status.Select(MapStatusCheckError)),
+            SetupFailure.GeneralFailure => "فشل عام أثناء Setup. (غالباً بسبب اتصال/صلاحيات/إعدادات Dashboard). جرّب زر (مساعدة) داخل التطبيق واتبع النقاط.",
+            _ => failure.ToString() ?? "Setup failed"
+        };
+    }
+
+    private static string MapStatusCheckError(StatusCheckError err)
+        => err?.ToString() switch
+        {
+            "CONNECTIVITY_UNAVAILABLE" => "لا يوجد اتصال إنترنت فعّال.",
+            "VPN_DETECTED" => "تم اكتشاف VPN. أوقف الـ VPN ثم أعد المحاولة.",
+            "DEV_MODE_ON" => "وضع المطوّر (Developer options) مفعّل. أوقفه ثم أعد المحاولة.",
+            "LOCATION_PERMISSION_MISSING" => "صلاحية الموقع غير مُعطاة للتطبيق.",
+            "LOCATION_MISSING" => "خدمة الموقع (Location) غير مفعّلة.",
+            "NFC_DISABLED" => "NFC غير مفعّل.",
+            "NFC_NOT_FOUND" => "لا يوجد NFC في هذا الجهاز.",
+            "NOT_INSTALLED" => "Payment Plugin غير مثبت.",
+            "UPDATED_REQUIRED" => "يلزم تحديث Payment Plugin.",
+            "NOT_SECURE" => "الجهاز غير آمن (قد يكون Root/Bootloader/إعدادات أمان).",
+            "UNSUPPORTED_DEVICE" => "الجهاز غير مدعوم.",
+            "UNSUPPORTED_SDK_VERSION" => "إصدار SDK/Android غير مدعوم.",
+            "OPERATION_NOT_SUPPORTED" => "العملية غير مدعومة على هذا الجهاز.",
+            "TERMINAL_UPDATING" => "الـ Terminal في حالة تحديث. انتظر ثم أعد المحاولة.",
+            "TERMINAL_RECONCILING" => "الـ Terminal في حالة تسوية. أنهِ التسوية ثم أعد المحاولة.",
+            "PHONE_STATE_DISABLED" => "إعدادات Phone State/Sim غير مناسبة على الجهاز.",
+            _ => err?.ToString() ?? "Unknown status error"
+        };
+
+    private static List<string> GetPreflightIssues(Activity activity)
+    {
+        var issues = new List<string>();
+
+        // NFC
+        var nfc = NfcAdapter.GetDefaultAdapter(activity);
+        if (nfc is null)
+            issues.Add("الجهاز لا يدعم NFC (مطلوب للدفع Tap).");
+        else if (!nfc.IsEnabled)
+            issues.Add("NFC مقفول. فعّله من إعدادات الجهاز.");
+
+        // Connectivity + VPN
+        var cm = (ConnectivityManager?)activity.GetSystemService(global::Android.Content.Context.ConnectivityService);
+        var network = cm?.ActiveNetwork;
+        var caps = network is null ? null : cm?.GetNetworkCapabilities(network);
+        if (caps is null || !caps.HasCapability(NetCapability.Internet))
+            issues.Add("لا يوجد اتصال إنترنت فعّال.");
+        if (caps?.HasTransport(TransportType.Vpn) == true)
+            issues.Add("VPN مفعّل. أوقف VPN ثم أعد المحاولة.");
+
+        // Developer options
+        try
+        {
+            var dev = Settings.Global.GetInt(activity.ContentResolver, Settings.Global.DevelopmentSettingsEnabled, 0);
+            if (dev == 1)
+                issues.Add("Developer options مفعّل. أوقفه ثم أعد المحاولة.");
+        }
+        catch
+        {
+            // ignore
+        }
+
+        // Location permission (سبب شائع لفشل Setup على بعض الأجهزة)
+        try
+        {
+            var granted = ContextCompat.CheckSelfPermission(activity, global::Android.Manifest.Permission.AccessFineLocation)
+                          == global::Android.Content.PM.Permission.Granted;
+            if (!granted)
+                issues.Add("صلاحية الموقع غير مُعطاة للتطبيق. امنح Location permission ثم أعد المحاولة.");
+        }
+        catch
+        {
+            // ignore
+        }
+
+        return issues;
     }
 }
