@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using NearpayPosMauiDemo.App.Presentation.Main;
+using NearpayPosMauiDemo.App.Presentation.Api;
 using NearpayPosMauiDemo.App.Presentation.Settings;
 using NearpayPosMauiDemo.App.Services;
 using NearpayPosMauiDemo.Core.Abstractions;
@@ -26,10 +27,14 @@ public static class MauiProgram
 #endif
 
 		builder.Services.AddSingleton<INearpaySettingsStore, NearpaySettingsStore>();
+		builder.Services.AddSingleton(new HttpClient());
+		builder.Services.AddSingleton<INearpayApiClient, NearpayApiClient>();
 
 		builder.Services.AddSingleton<MainPageViewModel>();
 		builder.Services.AddSingleton<MainPage>();
 
+		builder.Services.AddSingleton<NearpayApiViewModel>();
+		builder.Services.AddSingleton<NearpayApiPage>();
 		builder.Services.AddSingleton<NearpaySettingsViewModel>();
 		builder.Services.AddSingleton<NearpaySettingsPage>();
 		builder.Services.AddSingleton<AppShell>();

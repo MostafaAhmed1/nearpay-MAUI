@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="NearpayPosMauiDemo.App.Presentation.Api.NearpayApiPage"
+             Title="NearPay API"
+             FlowDirection="RightToLeft">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="12">
+
+            <Border Style="{DynamicResource CardBorderStyle}">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="اختبار NearPay APIs (قراءة فقط)" Style="{DynamicResource SectionTitleStyle}" />
+                    <Label Text="هذه الصفحة تستخدم API Key لاستدعاء endpoints الرسمية وعرض الاستجابة الخام (JSON) + HTTP status."
+                           FontSize="12"
+                           TextColor="{AppThemeBinding Light=#404040, Dark=#ACACAC}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Style="{DynamicResource CardBorderStyle}">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="Environment" Style="{DynamicResource FieldLabelStyle}" />
+                    <Border Style="{DynamicResource FieldBorderStyle}">
+                        <Picker Style="{DynamicResource FieldPickerStyle}"
+                                ItemsSource="{Binding EnvironmentOptions}"
+                                SelectedItem="{Binding SelectedEnvironment}" />
+                    </Border>
+
+                    <Label Text="API Key" Style="{DynamicResource FieldLabelStyle}" />
+                    <Border Style="{DynamicResource FieldBorderStyle}">
+                        <Entry Style="{DynamicResource FieldEntryStyle}"
+                               Text="{Binding ApiKey}"
+                               Placeholder="ضع API Key من Dashboard → Credentials"
+                               FlowDirection="LeftToRight" />
+                    </Border>
+
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <Button Grid.Column="0"
+                                Text="List Terminals"
+                                Style="{DynamicResource PrimaryButton}"
+                                Command="{Binding ListTerminalsCommand}" />
+                        <Button Grid.Column="1"
+                                Text="List Transactions"
+                                Style="{DynamicResource PrimaryButton}"
+                                Command="{Binding ListTransactionsCommand}" />
+                    </Grid>
+
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <Button Grid.Column="0"
+                                Text="List Intents"
+                                Style="{DynamicResource PrimaryButton}"
+                                Command="{Binding ListIntentsCommand}" />
+                        <Button Grid.Column="1"
+                                Text="POS Messages"
+                                Style="{DynamicResource PrimaryButton}"
+                                Command="{Binding ListPosMessagesCommand}" />
+                    </Grid>
+
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <Button Grid.Column="0"
+                                Text="Copy Output"
+                                Style="{DynamicResource SuccessButton}"
+                                Command="{Binding CopyOutputCommand}" />
+                        <Button Grid.Column="1"
+                                Text="Clear"
+                                Style="{DynamicResource DangerButton}"
+                                Command="{Binding ClearCommand}" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <Border StrokeThickness="1"
+                    Stroke="{DynamicResource CardStroke}"
+                    StrokeShape="RoundRectangle 12"
+                    Padding="10">
+                <Editor Text="{Binding OutputText}"
+                        IsReadOnly="True"
+                        AutoSize="TextChanges"
+                        HeightRequest="420"
+                        FlowDirection="LeftToRight" />
+            </Border>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
+
