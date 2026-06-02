@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Maui.ApplicationModel;
+using Microsoft.Maui.ApplicationModel.Communication;
 using NearpayPosMauiDemo.Core.Abstractions;
 using NearpayPosMauiDemo.Core.Models;
 
@@ -167,6 +168,34 @@ public partial class MainPageViewModel : ObservableObject
         await MainThread.InvokeOnMainThreadAsync(() =>
             Application.Current!.MainPage!.DisplayAlert("مساعدة سريعة", text, "تمام"));
     }
+
+    [RelayCommand]
+    private async Task PrepareDevice(CancellationToken ct)
+    {
+        // هدف الزر: تسهيل منح الصلاحيات المطلوبة قبل Setup بدل أن يفشل المستخدم بدون سبب واضح.
+        await RunBusyAsync("جاري تجهيز الجهاز (صلاحيات/إعدادات)...", async innerCt =>
+        {
+            // 1) Location permission (NearPay status checks غالباً تتطلبه)
+            var status = await Permissions.CheckStatusAsync<Permissions.LocationWhenInUse>();
+            if (status != PermissionStatus.Granted)
+                status = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
+
+            // 2) افتح إعدادات التطبيق إذا لم تُمنح الصلاحية (أو يحتاج المستخدم تفعيل Location Service)
+            if (status != PermissionStatus.Granted)
+            {
+                await MainThread.InvokeOnMainThreadAsync(() =>
+                    Application.Current!.MainPage!.DisplayAlert(
+                        "صلاحيات مطلوبة",
+                        "الرجاء منح صلاحية الموقع للتطبيق، وكذلك تفعيل خدمة الموقع (Location) من إعدادات الجهاز.",
+                        "فتح الإعدادات"));
+                AppInfo.ShowSettingsUI();
+            }
+
+            // 3) تنبيه بخصوص Developer options
+            Log("ملاحظة: NearPay قد يرفض Setup إذا كانت Developer options مفعّلة (متطلبات أمان).");
+        }, ct);
+    }
+
 
     [RelayCommand]
     private async Task Purchase(CancellationToken ct)

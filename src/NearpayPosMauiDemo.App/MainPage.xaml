@@ -331,6 +331,11 @@
                                 IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}" />
                     </Grid>
 
+                    <Button Text="تجهيز الجهاز (صلاحيات)"
+                            Style="{DynamicResource PrimaryButton}"
+                            Command="{Binding PrepareDeviceCommand}"
+                            IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}" />
+
                     <Button Text="مساعدة"
                             Style="{DynamicResource PrimaryButton}"
                             Command="{Binding ShowHelpCommand}"
