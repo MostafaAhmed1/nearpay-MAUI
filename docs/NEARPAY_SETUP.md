@@ -109,6 +109,21 @@ https://docs.nearpay.io/sa/en/guides/preparing-your-app#allowing-your-user-to-lo
 
 ## 7) تشغيل عمليات الدفع داخل الديمو
 
+## 7.1) Quick Start (أبسط طريقة للتجربة)
+
+1. شغّل التطبيق على هاتف Android حقيقي يدعم NFC.
+2. افتح الشاشة الرئيسية.
+3. (اختياري) غيّر:
+   - **Environment**: غالباً `Sandbox`
+   - **Auth Mode**: للتجربة السريعة اختر `UserEnter`
+4. اضغط:
+   - **تهيئة** ثم **Setup**
+5. أدخل **المبلغ** (minor units) مثال:
+   - `1455` = 14.55
+6. اضغط **شراء (Purchase)** ثم قرّب البطاقة من الهاتف/جهاز الـ POS عند طلب NearPay ذلك.
+
+> ملاحظة: الدفع عبر NFC يتم من خلال NearPay Payment Plugin (وليس عبر NFC منفصل داخل التطبيق).
+
 ### مبلغ العملية (Amount)
 NearPay يطلب المبلغ بصيغة “minor units”:
 - `1455` = 14.55
