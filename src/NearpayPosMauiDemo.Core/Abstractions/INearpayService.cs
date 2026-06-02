@@ -10,6 +10,10 @@ public interface INearpayService
 
     Task<NearpayOperationResult> SetupAsync(CancellationToken ct = default);
 
+    Task<NearpayOperationResult<string>> DeviceCompatibilityAsync(CancellationToken ct = default);
+
+    Task<NearpayOperationResult<string>> GetUserSessionAsync(CancellationToken ct = default);
+
     Task<NearpayOperationResult<NearpayTransactionResult>> PurchaseAsync(
         NearpayPurchaseRequest request,
         CancellationToken ct = default);
@@ -26,4 +30,3 @@ public interface INearpayService
         NearpayReconcileRequest request,
         CancellationToken ct = default);
 }
-

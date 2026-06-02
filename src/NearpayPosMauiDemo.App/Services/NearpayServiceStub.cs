@@ -13,6 +13,12 @@ public sealed class NearpayServiceStub : INearpayService
     public Task<NearpayOperationResult> SetupAsync(CancellationToken ct = default)
         => Task.FromResult(new NearpayOperationResult(false, "غير مدعوم على هذا النظام"));
 
+    public Task<NearpayOperationResult<string>> DeviceCompatibilityAsync(CancellationToken ct = default)
+        => Task.FromResult(new NearpayOperationResult<string>(false, "غير مدعوم على هذا النظام"));
+
+    public Task<NearpayOperationResult<string>> GetUserSessionAsync(CancellationToken ct = default)
+        => Task.FromResult(new NearpayOperationResult<string>(false, "غير مدعوم على هذا النظام"));
+
     public Task<NearpayOperationResult<NearpayTransactionResult>> PurchaseAsync(NearpayPurchaseRequest request, CancellationToken ct = default)
         => Task.FromResult(new NearpayOperationResult<NearpayTransactionResult>(false, "غير مدعوم على هذا النظام"));
 

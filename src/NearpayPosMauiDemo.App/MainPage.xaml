@@ -336,6 +336,19 @@
                             Command="{Binding PrepareDeviceCommand}"
                             IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}" />
 
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <Button Grid.Column="0"
+                                Text="فحص التوافق"
+                                Style="{DynamicResource PrimaryButton}"
+                                Command="{Binding DeviceCompatibilityCommand}"
+                                IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}" />
+                        <Button Grid.Column="1"
+                                Text="فحص الجلسة"
+                                Style="{DynamicResource PrimaryButton}"
+                                Command="{Binding GetUserSessionCommand}"
+                                IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}" />
+                    </Grid>
+
                     <Button Text="إعدادات NearPay"
                             Style="{DynamicResource PrimaryButton}"
                             Command="{Binding OpenSettingsCommand}"

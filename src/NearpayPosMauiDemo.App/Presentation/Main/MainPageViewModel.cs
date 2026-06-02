@@ -76,16 +76,15 @@ public partial class MainPageViewModel : ObservableObject
         {
             IsBusy = true;
             BusyMessage = message;
-            Log(message);
             await action(ct);
         }
         catch (TaskCanceledException)
         {
-            Log("انتهت مهلة العملية أو تم إلغاؤها.");
+            Log("TaskCanceledException");
         }
         catch (Exception ex)
         {
-            Log($"خطأ غير متوقع: {ex.Message}");
+            Log(ex.ToString());
         }
         finally
         {
@@ -135,11 +134,11 @@ public partial class MainPageViewModel : ObservableObject
                 );
 
                 await _nearpay.InitializeAsync(req, innerCt);
-                Log("تم تهيئة NearPay بنجاح");
+                Log("InitializeAsync: OK");
             }
             catch (Exception ex)
             {
-                Log($"فشل التهيئة: {ex.Message}");
+                Log(ex.ToString());
             }
         }, ct);
     }
@@ -149,7 +148,7 @@ public partial class MainPageViewModel : ObservableObject
     {
         if (!_nearpay.IsInitialized)
         {
-            Log("الرجاء الضغط على (تهيئة) أولاً قبل (تسجيل الجهاز)");
+            Log("NotInitialized");
             return;
         }
 
@@ -161,13 +160,7 @@ public partial class MainPageViewModel : ObservableObject
             timeoutCts.CancelAfter(TimeSpan.FromMinutes(2));
 
             var result = await _nearpay.SetupAsync(timeoutCts.Token);
-            Log(result.IsSuccess ? $"Setup OK: {result.Message}" : $"Setup Failed: {result.Message}");
-
-            if (!result.IsSuccess)
-            {
-                // إرشادات مختصرة لأكثر أسباب الفشل شيوعاً
-                Log("تأكد من: (1) تسجيل Package Name في Dashboard (2) إنشاء Terminal وأخذ Tid (3) Invite user ثم قبول الدعوة (4) تثبيت Payment Plugin عند الطلب.");
-            }
+            Log(result.Message);
         }, ct);
     }
 
@@ -178,7 +171,7 @@ public partial class MainPageViewModel : ObservableObject
 
         var text =
             "التهيئة = إنشاء كائن NearPay داخل التطبيق.\n" +
-            "تسجيل الجهاز (Setup) = يثبت/يفعّل Payment Plugin ويسجّل دخول المستخدم/يربطه بالـ Terminal.\n\n" +
+            "تسجيل الجهاز (Setup) = ينفّذ عملية Setup داخل NearPay SDK ويُكمل متطلبات تشغيل الدفع.\n\n" +
             "المطلوب قبل Setup:\n" +
             "1) Dashboard (Sandbox): Apps → Add App وسجّل Package Name.\n" +
             "2) Dashboard: Terminals → Create terminal وخذ Tid.\n" +
@@ -214,10 +207,33 @@ public partial class MainPageViewModel : ObservableObject
                         "فتح الإعدادات"));
                 AppInfo.ShowSettingsUI();
             }
-
-            // 3) تنبيه بخصوص Developer options
-            Log("ملاحظة: NearPay قد يرفض Setup إذا كانت Developer options مفعّلة (متطلبات أمان).");
         }, ct);
+    }
+
+    [RelayCommand]
+    private async Task DeviceCompatibility(CancellationToken ct)
+    {
+        if (!_nearpay.IsInitialized)
+        {
+            Log("NotInitialized");
+            return;
+        }
+
+        var res = await _nearpay.DeviceCompatibilityAsync(ct);
+        Log(res.Message);
+    }
+
+    [RelayCommand]
+    private async Task GetUserSession(CancellationToken ct)
+    {
+        if (!_nearpay.IsInitialized)
+        {
+            Log("NotInitialized");
+            return;
+        }
+
+        var res = await _nearpay.GetUserSessionAsync(ct);
+        Log(res.Message);
     }
 
 
@@ -237,7 +253,7 @@ public partial class MainPageViewModel : ObservableObject
             );
 
             var result = await _nearpay.PurchaseAsync(req, innerCt);
-            Log(result.IsSuccess ? $"Purchase Approved: {result.Data?.Summary}" : $"Purchase Failed: {result.Message}");
+            Log(result.IsSuccess ? (result.Data?.Raw ?? result.Data?.Summary ?? result.Message) : result.Message);
         }, ct);
     }
 
@@ -266,7 +282,7 @@ public partial class MainPageViewModel : ObservableObject
             );
 
             var result = await _nearpay.RefundAsync(req, innerCt);
-            Log(result.IsSuccess ? $"Refund Approved: {result.Data?.Summary}" : $"Refund Failed: {result.Message}");
+            Log(result.IsSuccess ? (result.Data?.Raw ?? result.Data?.Summary ?? result.Message) : result.Message);
         }, ct);
     }
 
@@ -289,7 +305,7 @@ public partial class MainPageViewModel : ObservableObject
             );
 
             var result = await _nearpay.ReverseAsync(req, innerCt);
-            Log(result.IsSuccess ? $"Reverse OK: {result.Data?.Summary}" : $"Reverse Failed: {result.Message}");
+            Log(result.IsSuccess ? (result.Data?.Raw ?? result.Data?.Summary ?? result.Message) : result.Message);
         }, ct);
     }
 
@@ -307,7 +323,7 @@ public partial class MainPageViewModel : ObservableObject
             );
 
             var result = await _nearpay.ReconcileAsync(req, innerCt);
-            Log(result.IsSuccess ? $"Reconcile OK: {result.Data?.Summary}" : $"Reconcile Failed: {result.Message}");
+            Log(result.IsSuccess ? (result.Data?.Raw ?? result.Data?.Summary ?? result.Message) : result.Message);
         }, ct);
     }
 

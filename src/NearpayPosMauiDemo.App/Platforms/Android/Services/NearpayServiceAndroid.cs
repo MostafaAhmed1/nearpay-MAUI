@@ -1,12 +1,9 @@
 using Android.App;
-using Android.Net;
-using Android.Nfc;
-using Android.Provider;
-using AndroidX.Core.Content;
 using NearpayPosMauiDemo.Core.Abstractions;
 using NearpayPosMauiDemo.Core.Models;
 
 using IO.Nearpay.Sdk;
+using IO.Nearpay.Sdk.Data.Models;
 using IO.Nearpay.Sdk.Utils;
 using IO.Nearpay.Sdk.Utils.Enums;
 using IO.Nearpay.Sdk.Utils.Listeners;
@@ -26,7 +23,6 @@ public sealed class NearpayServiceAndroid : INearpayService
     {
         ct.ThrowIfCancellationRequested();
 
-        // مهم: NearPay/Payment Plugin يعتمد على Activity context لفتح واجهات/Activities.
         var activity = Platform.CurrentActivity
             ?? throw new InvalidOperationException("لا يوجد Activity حالي. جرّب إعادة فتح التطبيق ثم المحاولة مرة أخرى.");
 
@@ -48,18 +44,32 @@ public sealed class NearpayServiceAndroid : INearpayService
     {
         var nearPay = EnsureInitialized();
 
-        // فحص متطلبات الجهاز قبل Setup لتفادي "GeneralFailure" الغامضة
-        if (Platform.CurrentActivity is not Activity activity)
-            return new NearpayOperationResult(false, "لا يوجد Activity حالي. أغلق التطبيق وافتحه ثم حاول مرة أخرى.");
-
-        var issues = GetPreflightIssues(activity);
-        if (issues.Count > 0)
-            return new NearpayOperationResult(false, "تعذر تسجيل الجهاز بسبب:\n- " + string.Join("\n- ", issues));
-
         var tcs = new TaskCompletionSource<NearpayOperationResult>(TaskCreationOptions.RunContinuationsAsynchronously);
         using var reg = ct.Register(() => tcs.TrySetCanceled(ct));
 
         nearPay.Setup(new SetupListener(tcs));
+        return await tcs.Task.ConfigureAwait(false);
+    }
+
+    public async Task<NearpayOperationResult<string>> DeviceCompatibilityAsync(CancellationToken ct = default)
+    {
+        var nearPay = EnsureInitialized();
+
+        var tcs = new TaskCompletionSource<NearpayOperationResult<string>>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var reg = ct.Register(() => tcs.TrySetCanceled(ct));
+
+        nearPay.DeviceCompatibility(new CompatibilityListener(tcs));
+        return await tcs.Task.ConfigureAwait(false);
+    }
+
+    public async Task<NearpayOperationResult<string>> GetUserSessionAsync(CancellationToken ct = default)
+    {
+        var nearPay = EnsureInitialized();
+
+        var tcs = new TaskCompletionSource<NearpayOperationResult<string>>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var reg = ct.Register(() => tcs.TrySetCanceled(ct));
+
+        nearPay.GetUserSession(new CheckSessionListener(tcs));
         return await tcs.Task.ConfigureAwait(false);
     }
 
@@ -180,10 +190,10 @@ public sealed class NearpayServiceAndroid : INearpayService
         : Java.Lang.Object, ISetupListener
     {
         public void OnSetupCompleted()
-            => tcs.TrySetResult(new NearpayOperationResult(true, "تم تسجيل الجهاز بنجاح"));
+            => tcs.TrySetResult(new NearpayOperationResult(true, "OnSetupCompleted"));
 
         public void OnSetupFailed(SetupFailure setupFailure)
-            => tcs.TrySetResult(new NearpayOperationResult(false, NearpayFailureFormatter.Describe(setupFailure)));
+            => tcs.TrySetResult(new NearpayOperationResult(false, NearpaySdkRawDump.Dump(setupFailure)));
     }
 
     private sealed class PurchaseListener(TaskCompletionSource<NearpayOperationResult<NearpayTransactionResult>> tcs)
@@ -192,13 +202,13 @@ public sealed class NearpayServiceAndroid : INearpayService
         public void OnPurchaseApproved(TransactionData transactionData)
             => tcs.TrySetResult(new NearpayOperationResult<NearpayTransactionResult>(
                 true,
-                "Approved",
-                new NearpayTransactionResult(transactionData.ToString() ?? "Approved")));
+                "OnPurchaseApproved",
+                new NearpayTransactionResult(transactionData.ToString() ?? "OnPurchaseApproved", transactionData.ToString())));
 
         public void OnPurchaseFailed(PurchaseFailure purchaseFailure)
             => tcs.TrySetResult(new NearpayOperationResult<NearpayTransactionResult>(
                 false,
-                NearpayFailureFormatter.Describe(purchaseFailure)));
+                NearpaySdkRawDump.Dump(purchaseFailure)));
     }
 
     private sealed class RefundListener(TaskCompletionSource<NearpayOperationResult<NearpayTransactionResult>> tcs)
@@ -207,13 +217,13 @@ public sealed class NearpayServiceAndroid : INearpayService
         public void OnRefundApproved(TransactionData transactionData)
             => tcs.TrySetResult(new NearpayOperationResult<NearpayTransactionResult>(
                 true,
-                "Approved",
-                new NearpayTransactionResult(transactionData.ToString() ?? "Approved")));
+                "OnRefundApproved",
+                new NearpayTransactionResult(transactionData.ToString() ?? "OnRefundApproved", transactionData.ToString())));
 
         public void OnRefundFailed(RefundFailure refundFailure)
             => tcs.TrySetResult(new NearpayOperationResult<NearpayTransactionResult>(
                 false,
-                NearpayFailureFormatter.Describe(refundFailure)));
+                NearpaySdkRawDump.Dump(refundFailure)));
     }
 
     private sealed class ReversalListener(TaskCompletionSource<NearpayOperationResult<NearpayTransactionResult>> tcs)
@@ -222,13 +232,13 @@ public sealed class NearpayServiceAndroid : INearpayService
         public void OnReversalFinished(TransactionData transactionData)
             => tcs.TrySetResult(new NearpayOperationResult<NearpayTransactionResult>(
                 true,
-                "Finished",
-                new NearpayTransactionResult(transactionData.ToString() ?? "Finished")));
+                "OnReversalFinished",
+                new NearpayTransactionResult(transactionData.ToString() ?? "OnReversalFinished", transactionData.ToString())));
 
         public void OnReversalFailed(ReversalFailure reversalFailure)
             => tcs.TrySetResult(new NearpayOperationResult<NearpayTransactionResult>(
                 false,
-                NearpayFailureFormatter.Describe(reversalFailure)));
+                NearpaySdkRawDump.Dump(reversalFailure)));
     }
 
     private sealed class ReconcileListener(TaskCompletionSource<NearpayOperationResult<NearpayReconcileResult>> tcs)
@@ -246,54 +256,41 @@ public sealed class NearpayServiceAndroid : INearpayService
         public void OnReconcileFailed(ReconcileFailure reconcileFailure)
             => tcs.TrySetResult(new NearpayOperationResult<NearpayReconcileResult>(
                 false,
-                NearpayFailureFormatter.Describe(reconcileFailure)));
+                NearpaySdkRawDump.Dump(reconcileFailure)));
     }
 
-    private static List<string> GetPreflightIssues(Activity activity)
+    private sealed class CompatibilityListener(TaskCompletionSource<NearpayOperationResult<string>> tcs)
+        : Java.Lang.Object, ICompatibilityListener
     {
-        var issues = new List<string>();
+        public void OnDeviceCompatible()
+            => tcs.TrySetResult(new NearpayOperationResult<string>(true, "OnDeviceCompatible", "OnDeviceCompatible"));
 
-        // NFC
-        var nfc = NfcAdapter.GetDefaultAdapter(activity);
-        if (nfc is null)
-            issues.Add("الجهاز لا يدعم NFC (مطلوب للدفع Tap).");
-        else if (!nfc.IsEnabled)
-            issues.Add("NFC مقفول. فعّله من إعدادات الجهاز.");
-
-        // Connectivity + VPN
-        var cm = (ConnectivityManager?)activity.GetSystemService(global::Android.Content.Context.ConnectivityService);
-        var network = cm?.ActiveNetwork;
-        var caps = network is null ? null : cm?.GetNetworkCapabilities(network);
-        if (caps is null || !caps.HasCapability(NetCapability.Internet))
-            issues.Add("لا يوجد اتصال إنترنت فعّال.");
-        if (caps?.HasTransport(TransportType.Vpn) == true)
-            issues.Add("VPN مفعّل. أوقف VPN ثم أعد المحاولة.");
-
-        // Developer options
-        try
+        public void OnDeviceIncompatible(CompatibilityFailure compatibilityFailure)
         {
-            var dev = Settings.Global.GetInt(activity.ContentResolver, Settings.Global.DevelopmentSettingsEnabled, 0);
-            if (dev == 1)
-                issues.Add("Developer options مفعّل. أوقفه ثم أعد المحاولة.");
+            var raw = NearpaySdkRawDump.Dump(compatibilityFailure);
+            tcs.TrySetResult(new NearpayOperationResult<string>(false, raw, raw));
         }
-        catch
+    }
+
+    private sealed class CheckSessionListener(TaskCompletionSource<NearpayOperationResult<string>> tcs)
+        : Java.Lang.Object, ICheckSessionListener
+    {
+        public void GetSessionInfo(SessionInfo info)
         {
-            // ignore
+            var raw = NearpaySdkRawDump.Dump(info);
+            tcs.TrySetResult(new NearpayOperationResult<string>(true, raw, raw));
         }
 
-        // Location permission (سبب شائع لفشل Setup على بعض الأجهزة)
-        try
+        public void OnSessionBusy(string message)
+            => tcs.TrySetResult(new NearpayOperationResult<string>(false, message, message));
+
+        public void OnSessionFailed(SessionFailure sessionFailure)
         {
-            var granted = ContextCompat.CheckSelfPermission(activity, global::Android.Manifest.Permission.AccessFineLocation)
-                          == global::Android.Content.PM.Permission.Granted;
-            if (!granted)
-                issues.Add("صلاحية الموقع غير مُعطاة للتطبيق. امنح Location permission ثم أعد المحاولة.");
-        }
-        catch
-        {
-            // ignore
+            var raw = NearpaySdkRawDump.Dump(sessionFailure);
+            tcs.TrySetResult(new NearpayOperationResult<string>(false, raw, raw));
         }
 
-        return issues;
+        public void OnSessionFree()
+            => tcs.TrySetResult(new NearpayOperationResult<string>(true, "OnSessionFree", "OnSessionFree"));
     }
 }
