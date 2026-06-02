@@ -20,8 +20,12 @@ artifacts/
 *.apk
 *.aab
 
+# Secrets / Keys (DO NOT COMMIT)
+*.pem
+*.key
+*private-key*.pem
+
 # OS
 Thumbs.db
 Desktop.ini
 .DS_Store
-

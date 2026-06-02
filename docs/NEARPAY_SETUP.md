@@ -96,14 +96,52 @@ https://docs.nearpay.io/sa/en/guides/preparing-your-app#allowing-your-user-to-lo
 
 ستحتاج من Dashboard:
 1. **Client UUID** أو **Merchant UUID** (حسب نوع الـ Dashboard)
-2. ملف **pos_key.pem** (Private key للتوقيع)
+2. ملف **pos_key.pem** (Private key للتوقيع)  
    - من صفحة **Credentials** اضغط Generate لتحميله
    - زر Generate يظهر مرة واحدة؛ إذا ضاع اطلب Reset من NearPay
 3. قيمة **terminal_id / TID** من صفحة **Terminals**
 
+### الملف الذي حصلت عليه (private-key.pem) كيف أستخدمه؟
+- هذا الملف هو **Private Key** للتوقيع (RS256) وليس نص يتم نسخه داخل التطبيق.
+- **لا تضعه داخل تطبيق الموبايل** ولا ترفعه على GitHub.
+- المطلوب: تستخدمه في سكربت/Backend لتوليد JWT ثم تنسخ **الناتج (token string)** وتضعه في التطبيق داخل `Auth Value`.
+
+### توليد JWT بسرعة (بدون Backend – للتجربة فقط)
+داخل المشروع ستجد سكربت جاهز:
+`tools/jwt/generate-jwt.js`
+
+الخطوات:
+1. انسخ ملف المفتاح من NearPay وسمّه مثلاً: `pos_key.pem` (ولا ترفعه للريبو).
+2. داخل مجلد `tools/jwt/` نفّذ:
+
+```bash
+npm i jsonwebtoken
+node generate-jwt.js ./pos_key.pem <terminal_id> <client_uuid_or_merchant_uuid> client
+```
+
+سيطبع لك JWT في الطرفية — انسخه وضعه في التطبيق:
+- `Auth Mode = Jwt`
+- `Auth Value = <JWT>`
+
 ### أين أضع JWT؟
 - في الديمو: `Auth Mode = Jwt` و `Auth Value = <JWT>`
 - في المشروع الرسمي: استدعِ backend ثم خزّنه مؤقتاً في SecureStorage.
+
+---
+
+## 6.1) لماذا Setup يفشل بعد (Mobile/Email) رغم أن Initialize ناجح؟
+
+السبب الأكثر شيوعاً: المستخدم **غير مدعو على الـ Terminal** أو لم يقبل الدعوة.
+
+تأكد من Dashboard:
+1. Terminals → اختر الـ Terminal
+2. Access → Invite user
+3. أدخل Email/Mobile للمستخدم
+4. تأكد أن المستخدم **قبل الدعوة** ثم جرّب مرة أخرى.
+
+أيضاً:
+- تأكد أن Package Name مسجل في Apps.
+- تأكد أن Payment Plugin تم تثبيته/تحديثه عند طلب NearPay.
 
 ---
 

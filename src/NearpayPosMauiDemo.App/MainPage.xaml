@@ -1,6 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:conv="clr-namespace:NearpayPosMauiDemo.App.Converters"
              x:Class="NearpayPosMauiDemo.App.MainPage"
              FlowDirection="RightToLeft"
              Title="NearPay POS Demo">
@@ -12,6 +13,8 @@
     -->
     <ContentPage.Resources>
         <ResourceDictionary>
+            <conv:InverseBoolConverter x:Key="InverseBoolConverter" />
+
             <!-- Minimal palette -->
             <Color x:Key="Primary">#1B3A57</Color>
             <Color x:Key="PrimaryDarkText">#0B1220</Color>
@@ -114,6 +117,18 @@
     <ScrollView>
         <VerticalStackLayout Padding="16" Spacing="14">
 
+            <!-- Loading indicator -->
+            <Border IsVisible="{Binding IsBusy}"
+                    StrokeThickness="0"
+                    BackgroundColor="{AppThemeBinding Light=#CCFFFFFF, Dark=#CC000000}"
+                    StrokeShape="RoundRectangle 14"
+                    Padding="12">
+                <HorizontalStackLayout Spacing="10" VerticalOptions="Center">
+                    <ActivityIndicator IsRunning="{Binding IsBusy}" />
+                    <Label Text="{Binding BusyMessage}" VerticalTextAlignment="Center" />
+                </HorizontalStackLayout>
+            </Border>
+
             <!-- Header -->
             <Border Style="{DynamicResource CardBorderStyle}"
                     BackgroundColor="{DynamicResource Primary}"
@@ -183,19 +198,23 @@
                         <Button Grid.Row="0" Grid.Column="0"
                                 Text="شراء (Purchase)"
                                 Style="{DynamicResource SuccessButton}"
-                                Command="{Binding PurchaseCommand}" />
+                                Command="{Binding PurchaseCommand}"
+                                IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}" />
                         <Button Grid.Row="0" Grid.Column="1"
                                 Text="استرجاع (Refund)"
                                 Style="{DynamicResource WarningButton}"
-                                Command="{Binding RefundCommand}" />
+                                Command="{Binding RefundCommand}"
+                                IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}" />
                         <Button Grid.Row="1" Grid.Column="0"
                                 Text="عكس (Reverse)"
                                 Style="{DynamicResource DangerButton}"
-                                Command="{Binding ReverseCommand}" />
+                                Command="{Binding ReverseCommand}"
+                                IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}" />
                         <Button Grid.Row="1" Grid.Column="1"
                                 Text="تسوية (Reconcile)"
                                 Style="{DynamicResource PrimaryButton}"
-                                Command="{Binding ReconcileCommand}" />
+                                Command="{Binding ReconcileCommand}"
+                                IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}" />
                     </Grid>
                 </VerticalStackLayout>
             </Border>
@@ -304,9 +323,12 @@
             <Border Style="{DynamicResource CardBorderStyle}">
                 <VerticalStackLayout Spacing="10">
                     <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
-                        <Button Grid.Column="0" Text="تهيئة" Style="{DynamicResource PrimaryButton}" Command="{Binding InitializeCommand}" />
-                        <Button Grid.Column="1" Text="Setup" Style="{DynamicResource PrimaryButton}" Command="{Binding SetupCommand}" />
-                        <Button Grid.Column="2" Text="مسح السجل" Style="{DynamicResource PrimaryButton}" Command="{Binding ClearLogCommand}" />
+                        <Button Grid.Column="0" Text="تهيئة" Style="{DynamicResource PrimaryButton}" Command="{Binding InitializeCommand}"
+                                IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}" />
+                        <Button Grid.Column="1" Text="Setup" Style="{DynamicResource PrimaryButton}" Command="{Binding SetupCommand}"
+                                IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}" />
+                        <Button Grid.Column="2" Text="مسح السجل" Style="{DynamicResource PrimaryButton}" Command="{Binding ClearLogCommand}"
+                                IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}" />
                     </Grid>
 
                     <Label Text="الحالة" Style="{DynamicResource SectionTitleStyle}" />
