@@ -47,7 +47,8 @@ public sealed class NearpayServiceAndroid : INearpayService
         var tcs = new TaskCompletionSource<NearpayOperationResult>(TaskCreationOptions.RunContinuationsAsynchronously);
         using var reg = ct.Register(() => tcs.TrySetCanceled(ct));
 
-        nearPay.Setup(new SetupListener(tcs));
+        await MainThread.InvokeOnMainThreadAsync(() =>
+            nearPay.Setup(new SetupListener(tcs)));
         return await tcs.Task.ConfigureAwait(false);
     }
 
@@ -58,7 +59,8 @@ public sealed class NearpayServiceAndroid : INearpayService
         var tcs = new TaskCompletionSource<NearpayOperationResult<string>>(TaskCreationOptions.RunContinuationsAsynchronously);
         using var reg = ct.Register(() => tcs.TrySetCanceled(ct));
 
-        nearPay.DeviceCompatibility(new CompatibilityListener(tcs));
+        await MainThread.InvokeOnMainThreadAsync(() =>
+            nearPay.DeviceCompatibility(new CompatibilityListener(tcs)));
         return await tcs.Task.ConfigureAwait(false);
     }
 
@@ -69,7 +71,8 @@ public sealed class NearpayServiceAndroid : INearpayService
         var tcs = new TaskCompletionSource<NearpayOperationResult<string>>(TaskCreationOptions.RunContinuationsAsynchronously);
         using var reg = ct.Register(() => tcs.TrySetCanceled(ct));
 
-        nearPay.GetUserSession(new CheckSessionListener(tcs));
+        await MainThread.InvokeOnMainThreadAsync(() =>
+            nearPay.GetUserSession(new CheckSessionListener(tcs)));
         return await tcs.Task.ConfigureAwait(false);
     }
 
@@ -80,15 +83,16 @@ public sealed class NearpayServiceAndroid : INearpayService
         var tcs = new TaskCompletionSource<NearpayOperationResult<NearpayTransactionResult>>(TaskCreationOptions.RunContinuationsAsynchronously);
         using var reg = ct.Register(() => tcs.TrySetCanceled(ct));
 
-        nearPay.Purchase(
-            amount: request.AmountMinor,
-            customerReferenceNumber: request.CustomerReferenceNumber,
-            enableReceiptUi: request.EnableReceiptUi,
-            enableReversal: request.EnableReversal,
-            finishTimeOut: request.FinishTimeoutSeconds,
-            requestId: request.RequestId is null ? null : UUID.FromString(request.RequestId.Value.ToString()),
-            enableUiDismiss: request.EnableUiDismiss,
-            listener: new PurchaseListener(tcs));
+        await MainThread.InvokeOnMainThreadAsync(() =>
+            nearPay.Purchase(
+                amount: request.AmountMinor,
+                customerReferenceNumber: request.CustomerReferenceNumber,
+                enableReceiptUi: request.EnableReceiptUi,
+                enableReversal: request.EnableReversal,
+                finishTimeOut: request.FinishTimeoutSeconds,
+                requestId: request.RequestId is null ? null : UUID.FromString(request.RequestId.Value.ToString()),
+                enableUiDismiss: request.EnableUiDismiss,
+                listener: new PurchaseListener(tcs)));
 
         return await tcs.Task.ConfigureAwait(false);
     }
@@ -100,18 +104,19 @@ public sealed class NearpayServiceAndroid : INearpayService
         var tcs = new TaskCompletionSource<NearpayOperationResult<NearpayTransactionResult>>(TaskCreationOptions.RunContinuationsAsynchronously);
         using var reg = ct.Register(() => tcs.TrySetCanceled(ct));
 
-        nearPay.Refund(
-            amount: request.AmountMinor,
-            transactionUuid: request.TransactionUuid,
-            customerReferenceNumber: request.CustomerReferenceNumber,
-            enableReceiptUi: request.EnableReceiptUi,
-            enableReversal: request.EnableReversal,
-            enableEditableRefundAmountUi: request.EnableEditableRefundAmountUi,
-            finishTimeOut: request.FinishTimeoutSeconds,
-            requestId: request.RequestId is null ? null : UUID.FromString(request.RequestId.Value.ToString()),
-            adminPin: request.AdminPin,
-            enableUiDismiss: request.EnableUiDismiss,
-            listener: new RefundListener(tcs));
+        await MainThread.InvokeOnMainThreadAsync(() =>
+            nearPay.Refund(
+                amount: request.AmountMinor,
+                transactionUuid: request.TransactionUuid,
+                customerReferenceNumber: request.CustomerReferenceNumber,
+                enableReceiptUi: request.EnableReceiptUi,
+                enableReversal: request.EnableReversal,
+                enableEditableRefundAmountUi: request.EnableEditableRefundAmountUi,
+                finishTimeOut: request.FinishTimeoutSeconds,
+                requestId: request.RequestId is null ? null : UUID.FromString(request.RequestId.Value.ToString()),
+                adminPin: request.AdminPin,
+                enableUiDismiss: request.EnableUiDismiss,
+                listener: new RefundListener(tcs)));
 
         return await tcs.Task.ConfigureAwait(false);
     }
@@ -123,12 +128,13 @@ public sealed class NearpayServiceAndroid : INearpayService
         var tcs = new TaskCompletionSource<NearpayOperationResult<NearpayTransactionResult>>(TaskCreationOptions.RunContinuationsAsynchronously);
         using var reg = ct.Register(() => tcs.TrySetCanceled(ct));
 
-        nearPay.Reverse(
-            transactionUuid: request.TransactionUuid,
-            enableReceiptUi: request.EnableReceiptUi,
-            finishTimeOut: request.FinishTimeoutSeconds,
-            enableUiDismiss: request.EnableUiDismiss,
-            listener: new ReversalListener(tcs));
+        await MainThread.InvokeOnMainThreadAsync(() =>
+            nearPay.Reverse(
+                transactionUuid: request.TransactionUuid,
+                enableReceiptUi: request.EnableReceiptUi,
+                finishTimeOut: request.FinishTimeoutSeconds,
+                enableUiDismiss: request.EnableUiDismiss,
+                listener: new ReversalListener(tcs)));
 
         return await tcs.Task.ConfigureAwait(false);
     }
@@ -140,13 +146,14 @@ public sealed class NearpayServiceAndroid : INearpayService
         var tcs = new TaskCompletionSource<NearpayOperationResult<NearpayReconcileResult>>(TaskCreationOptions.RunContinuationsAsynchronously);
         using var reg = ct.Register(() => tcs.TrySetCanceled(ct));
 
-        nearPay.Reconcile(
-            reconcileId: request.ReconcileId is null ? null : UUID.FromString(request.ReconcileId.Value.ToString()),
-            enableReceiptUi: request.EnableReceiptUi,
-            adminPin: request.AdminPin,
-            finishTimeOut: request.FinishTimeoutSeconds,
-            enableUiDismiss: request.EnableUiDismiss,
-            listener: new ReconcileListener(tcs));
+        await MainThread.InvokeOnMainThreadAsync(() =>
+            nearPay.Reconcile(
+                reconcileId: request.ReconcileId is null ? null : UUID.FromString(request.ReconcileId.Value.ToString()),
+                enableReceiptUi: request.EnableReceiptUi,
+                adminPin: request.AdminPin,
+                finishTimeOut: request.FinishTimeoutSeconds,
+                enableUiDismiss: request.EnableUiDismiss,
+                listener: new ReconcileListener(tcs)));
 
         return await tcs.Task.ConfigureAwait(false);
     }

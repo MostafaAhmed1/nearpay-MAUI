@@ -68,9 +68,9 @@ public partial class MainPageViewModel : ObservableObject
     private void Log(string message)
     {
         var line = $"[{DateTime.Now:HH:mm:ss}] {message}";
-        Logs.Insert(0, line);
+        Logs.Add(line);
         StatusMessage = message;
-        LogText = string.IsNullOrEmpty(LogText) ? line : (line + Environment.NewLine + LogText);
+        LogText = string.IsNullOrEmpty(LogText) ? line : (LogText + Environment.NewLine + line);
     }
 
     private async Task RunBusyAsync(string message, Func<CancellationToken, Task> action, CancellationToken ct)
@@ -376,6 +376,12 @@ public partial class MainPageViewModel : ObservableObject
             await _nearpay.InitializeAsync(initReq, innerCt);
             Log("InitializeAsync: OK");
 
+            Log("STEP: Setup");
+            var setup = await _nearpay.SetupAsync(innerCt);
+            Log(setup.Message);
+            if (!setup.IsSuccess) return;
+
+            // اختياري: فحوصات SDK بعد نجاح Setup (لا يجب أن تمنع تجربة الشراء)
             Log("STEP: DeviceCompatibility");
             var comp = await _nearpay.DeviceCompatibilityAsync(innerCt);
             Log(comp.Message);
@@ -383,11 +389,6 @@ public partial class MainPageViewModel : ObservableObject
             Log("STEP: GetUserSession");
             var sess = await _nearpay.GetUserSessionAsync(innerCt);
             Log(sess.Message);
-
-            Log("STEP: Setup");
-            var setup = await _nearpay.SetupAsync(innerCt);
-            Log(setup.Message);
-            if (!setup.IsSuccess) return;
 
             Log("STEP: Purchase");
             var purchaseReq = new NearpayPurchaseRequest(
