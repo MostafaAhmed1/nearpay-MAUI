@@ -73,6 +73,14 @@ public partial class MainPageViewModel : ObservableObject
             Log(message);
             await action(ct);
         }
+        catch (TaskCanceledException)
+        {
+            Log("انتهت مهلة العملية أو تم إلغاؤها.");
+        }
+        catch (Exception ex)
+        {
+            Log($"خطأ غير متوقع: {ex.Message}");
+        }
         finally
         {
             IsBusy = false;
@@ -120,9 +128,14 @@ public partial class MainPageViewModel : ObservableObject
             return;
         }
 
-        await RunBusyAsync("جاري تنفيذ Setup...", async innerCt =>
+        await RunBusyAsync("جاري تسجيل الجهاز (Setup)...", async innerCt =>
         {
-            var result = await _nearpay.SetupAsync(innerCt);
+            // Setup قد يفتح واجهة NearPay (تثبيت/تسجيل دخول/اختيار Terminal).
+            // لو لم يكتمل خلال فترة طويلة نوقفه لتجنب تجميد الواجهة.
+            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(innerCt);
+            timeoutCts.CancelAfter(TimeSpan.FromMinutes(2));
+
+            var result = await _nearpay.SetupAsync(timeoutCts.Token);
             Log(result.IsSuccess ? $"Setup OK: {result.Message}" : $"Setup Failed: {result.Message}");
 
             if (!result.IsSuccess)

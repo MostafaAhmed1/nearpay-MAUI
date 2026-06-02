@@ -22,10 +22,12 @@ public sealed class NearpayServiceAndroid : INearpayService
     {
         ct.ThrowIfCancellationRequested();
 
-        var context = Platform.CurrentActivity ?? global::Android.App.Application.Context;
+        // مهم: NearPay/Payment Plugin يعتمد على Activity context لفتح واجهات/Activities.
+        var activity = Platform.CurrentActivity
+            ?? throw new InvalidOperationException("لا يوجد Activity حالي. جرّب إعادة فتح التطبيق ثم المحاولة مرة أخرى.");
 
         var builder = new NearPay.Builder()
-            .Context(context)
+            .Context(activity)
             .Environment(MapEnvironment(request.Environment))
             .AuthenticationData(MapAuth(request))
             .Locale(ToLocale(request.Locale))
