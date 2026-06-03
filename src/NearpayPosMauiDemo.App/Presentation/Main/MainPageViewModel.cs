@@ -406,4 +406,24 @@ public partial class MainPageViewModel : ObservableObject
                 : purchase.Message);
         }, ct);
     }
+
+    [RelayCommand]
+    private async Task DownloadPaymentPluginSandbox(CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        // رابط رسمي من NearPay (Payment Plugin Changelog)
+        await Browser.Default.OpenAsync(
+            "https://firebasestorage.googleapis.com/v0/b/nearpayio/o/payments-plugins%2Fsnadbox%2Fpayment-plugin-sandboxNearpayStore-163-protected.apk?alt=media&token=c1da7097-8a34-4b0e-aad4-ec3fb13b8b17",
+            BrowserLaunchMode.External);
+    }
+
+    [RelayCommand]
+    private async Task DownloadPaymentPluginProduction(CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        // رابط رسمي من NearPay (Payment Plugin Changelog)
+        await Browser.Default.OpenAsync(
+            "https://firebasestorage.googleapis.com/v0/b/nearpayio/o/payments-plugins%2Fproduction%2Fpayment-plugin-productionNearpayStore-163-protected.apk?alt=media&token=76303e0d-28f4-44f8-82dc-04363b8313b3",
+            BrowserLaunchMode.External);
+    }
 }

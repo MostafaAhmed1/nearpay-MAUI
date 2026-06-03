@@ -359,6 +359,19 @@
                             Command="{Binding RunOneButtonPurchaseCommand}"
                             IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}" />
 
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <Button Grid.Column="0"
+                                Text="تحميل Plugin (Sandbox)"
+                                Style="{DynamicResource PrimaryButton}"
+                                Command="{Binding DownloadPaymentPluginSandboxCommand}"
+                                IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}" />
+                        <Button Grid.Column="1"
+                                Text="تحميل Plugin (Production)"
+                                Style="{DynamicResource PrimaryButton}"
+                                Command="{Binding DownloadPaymentPluginProductionCommand}"
+                                IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}" />
+                    </Grid>
+
                     <Button Text="مساعدة"
                             Style="{DynamicResource PrimaryButton}"
                             Command="{Binding ShowHelpCommand}"
