@@ -31,7 +31,7 @@
 		<ApplicationTitle>NearpayPosMauiDemo.App</ApplicationTitle>
 
 		<!-- App Identifier -->
-		<ApplicationId>com.companyname.nearpayposmauidemo.app</ApplicationId>
+		<ApplicationId>com.alexsoftcode.alexpos</ApplicationId>
 
 		<!-- Versions -->
 		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>

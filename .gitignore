@@ -28,6 +28,12 @@ artifacts/
 # Node tooling (JWT helper)
 tools/jwt/node_modules/
 
+# Secrets / tokens (NEVER COMMIT)
+**/*token*.txt
+**/*token*.json
+**/*secrets*.json
+**/*secrets*.txt
+
 # OS
 Thumbs.db
 Desktop.ini
