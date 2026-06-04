@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:conv="clr-namespace:NearpayPosMauiDemo.App.Converters"
@@ -159,71 +159,11 @@
                 </Grid>
             </Border>
 
-            <!-- Amount (primary) -->
+            <!-- One Button Flow -->
             <Border Style="{DynamicResource CardBorderStyle}">
                 <VerticalStackLayout Spacing="10">
-                    <Label Text="المبلغ" Style="{DynamicResource SectionTitleStyle}" />
-                    <Label Text="أدخل القيمة بالـ minor units: مثال 1455 = 14.55"
-                           Style="{DynamicResource CaptionStyle}" />
-
-                    <Border Style="{DynamicResource FieldBorderStyle}">
-                        <Entry Style="{DynamicResource AmountEntryStyle}"
-                               Keyboard="Numeric"
-                               Text="{Binding AmountMinor}"
-                               FlowDirection="LeftToRight" />
-                    </Border>
-
-                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
-                        <VerticalStackLayout Grid.Column="0" Spacing="6">
-                            <Label Text="مرجع العميل (اختياري)" Style="{DynamicResource FieldLabelStyle}" />
-                            <Border Style="{DynamicResource FieldBorderStyle}">
-                                <Entry Style="{DynamicResource FieldEntryStyle}"
-                                       Placeholder="أي رقم/نص"
-                                       Text="{Binding CustomerReferenceNumber}" />
-                            </Border>
-                        </VerticalStackLayout>
-
-                        <VerticalStackLayout Grid.Column="1" Spacing="6">
-                            <Label Text="مهلة الإنهاء (ث)" Style="{DynamicResource FieldLabelStyle}" />
-                            <Border Style="{DynamicResource FieldBorderStyle}">
-                                <Entry Style="{DynamicResource FieldEntryStyle}"
-                                       Keyboard="Numeric"
-                                       Text="{Binding FinishTimeoutSeconds}"
-                                       FlowDirection="LeftToRight" />
-                            </Border>
-                        </VerticalStackLayout>
-                    </Grid>
-
-                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="10">
-                        <Button Grid.Row="0" Grid.Column="0"
-                                Text="شراء (Purchase)"
-                                Style="{DynamicResource SuccessButton}"
-                                Command="{Binding PurchaseCommand}"
-                                IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}" />
-                        <Button Grid.Row="0" Grid.Column="1"
-                                Text="استرجاع (Refund)"
-                                Style="{DynamicResource WarningButton}"
-                                Command="{Binding RefundCommand}"
-                                IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}" />
-                        <Button Grid.Row="1" Grid.Column="0"
-                                Text="عكس (Reverse)"
-                                Style="{DynamicResource DangerButton}"
-                                Command="{Binding ReverseCommand}"
-                                IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}" />
-                        <Button Grid.Row="1" Grid.Column="1"
-                                Text="تسوية (Reconcile)"
-                                Style="{DynamicResource PrimaryButton}"
-                                Command="{Binding ReconcileCommand}"
-                                IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}" />
-                    </Grid>
-                </VerticalStackLayout>
-            </Border>
-
-            <!-- Advanced fields -->
-            <Border Style="{DynamicResource CardBorderStyle}">
-                <VerticalStackLayout Spacing="10">
-                    <Label Text="إعدادات الدخول (Authentication)" Style="{DynamicResource SectionTitleStyle}" />
-                    <Label Text="استخدم UserEnter للتجربة السريعة، أو JWT/Email/Mobile حسب إعداد حساب NearPay."
+                    <Label Text="إعدادات التشغيل (شاشة واحدة + زر واحد)" Style="{DynamicResource SectionTitleStyle}" />
+                    <Label Text="التسلسل: Initialize → Setup → Purchase"
                            Style="{DynamicResource CaptionStyle}" />
 
                     <Grid ColumnDefinitions="*,*"
@@ -249,88 +189,62 @@
                         </VerticalStackLayout>
 
                         <VerticalStackLayout Grid.Row="1" Grid.ColumnSpan="2" Spacing="6">
-                            <Label Text="بيانات الدخول (JWT / Email / Mobile)" Style="{DynamicResource FieldLabelStyle}" />
+                            <Label Text="Auth Value (JWT / Email / Mobile)" Style="{DynamicResource FieldLabelStyle}" />
                             <Border Style="{DynamicResource FieldBorderStyle}">
                                 <Entry Style="{DynamicResource FieldEntryStyle}"
-                                       Placeholder="JWT / Email / Mobile"
+                                       Placeholder="اتركه فارغاً عند UserEnter"
                                        Text="{Binding AuthValue}"
                                        FlowDirection="LeftToRight" />
                             </Border>
                         </VerticalStackLayout>
 
                         <VerticalStackLayout Grid.Row="2" Grid.Column="0" Spacing="6">
-                            <Label Text="اللغة (Locale)" Style="{DynamicResource FieldLabelStyle}" />
+                            <Label Text="المبلغ (minor units)" Style="{DynamicResource FieldLabelStyle}" />
                             <Border Style="{DynamicResource FieldBorderStyle}">
-                                <Entry Style="{DynamicResource FieldEntryStyle}"
-                                       Placeholder="ar-SA"
-                                       Text="{Binding Locale}"
+                                <Entry Style="{DynamicResource AmountEntryStyle}"
+                                       Keyboard="Numeric"
+                                       Text="{Binding AmountMinor}"
                                        FlowDirection="LeftToRight" />
                             </Border>
                         </VerticalStackLayout>
 
                         <VerticalStackLayout Grid.Row="2" Grid.Column="1" Spacing="6">
-                            <Label Text="TID (اختياري)" Style="{DynamicResource FieldLabelStyle}" />
+                            <Label Text="مهلة الإنهاء (ث)" Style="{DynamicResource FieldLabelStyle}" />
                             <Border Style="{DynamicResource FieldBorderStyle}">
                                 <Entry Style="{DynamicResource FieldEntryStyle}"
-                                       Placeholder="PS239210"
-                                       Text="{Binding Tid}"
+                                       Keyboard="Numeric"
+                                       Text="{Binding FinishTimeoutSeconds}"
                                        FlowDirection="LeftToRight" />
                             </Border>
                         </VerticalStackLayout>
                     </Grid>
 
-                    <Label Text="حقول Refund / Reverse" Style="{DynamicResource SectionTitleStyle}" />
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="Customer Reference (اختياري)" Style="{DynamicResource FieldLabelStyle}" />
+                        <Border Style="{DynamicResource FieldBorderStyle}">
+                            <Entry Style="{DynamicResource FieldEntryStyle}"
+                                   Placeholder="أي رقم/نص"
+                                   Text="{Binding CustomerReferenceNumber}" />
+                        </Border>
+                    </VerticalStackLayout>
 
-                    <Grid ColumnDefinitions="*,*"
-                          RowDefinitions="Auto,Auto"
-                          ColumnSpacing="10"
-                          RowSpacing="10">
-                        <VerticalStackLayout Grid.Row="0" Grid.ColumnSpan="2" Spacing="6">
-                            <Label Text="Transaction UUID" Style="{DynamicResource FieldLabelStyle}" />
-                            <Border Style="{DynamicResource FieldBorderStyle}">
-                                <Entry Style="{DynamicResource FieldEntryStyle}"
-                                       Placeholder="مطلوب لـ Refund/Reverse"
-                                       Text="{Binding TransactionUuid}"
-                                       FlowDirection="LeftToRight" />
-                            </Border>
-                        </VerticalStackLayout>
-
-                        <VerticalStackLayout Grid.Row="1" Grid.Column="0" Spacing="6">
-                            <Label Text="Admin PIN (اختياري)" Style="{DynamicResource FieldLabelStyle}" />
-                            <Border Style="{DynamicResource FieldBorderStyle}">
-                                <Entry Style="{DynamicResource FieldEntryStyle}"
-                                       Placeholder="0000"
-                                       IsPassword="True"
-                                       Text="{Binding AdminPin}"
-                                       FlowDirection="LeftToRight" />
-                            </Border>
-                        </VerticalStackLayout>
-
-                        <VerticalStackLayout Grid.Row="1" Grid.Column="1" Spacing="6">
-                            <Label Text="خيارات الواجهة" Style="{DynamicResource FieldLabelStyle}" />
-                            <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="Auto,*" RowSpacing="6" ColumnSpacing="8">
-                                <CheckBox Grid.Row="0" Grid.Column="0" IsChecked="{Binding EnableReceiptUi}" />
-                                <Label Grid.Row="0" Grid.Column="1" Text="Receipt UI" VerticalTextAlignment="Center" />
-                                <CheckBox Grid.Row="1" Grid.Column="0" IsChecked="{Binding EnableUiDismiss}" />
-                                <Label Grid.Row="1" Grid.Column="1" Text="UI Dismiss" VerticalTextAlignment="Center" />
-                            </Grid>
-                        </VerticalStackLayout>
+                    <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="Auto,*" RowSpacing="6" ColumnSpacing="8">
+                        <CheckBox Grid.Row="0" Grid.Column="0" IsChecked="{Binding EnableReceiptUi}" />
+                        <Label Grid.Row="0" Grid.Column="1" Text="Receipt UI" VerticalTextAlignment="Center" />
+                        <CheckBox Grid.Row="1" Grid.Column="0" IsChecked="{Binding EnableUiDismiss}" />
+                        <Label Grid.Row="1" Grid.Column="1" Text="UI Dismiss" VerticalTextAlignment="Center" />
                     </Grid>
+
+                    <Button Text="تشغيل (Initialize → Setup → Purchase)"
+                            Style="{DynamicResource SuccessButton}"
+                            Command="{Binding RunOneButtonPurchaseCommand}"
+                            IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}" />
                 </VerticalStackLayout>
             </Border>
 
-            <!-- Setup buttons + logs -->
+            <!-- Tools + logs -->
             <Border Style="{DynamicResource CardBorderStyle}">
                 <VerticalStackLayout Spacing="10">
-                    <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
-                        <Button Grid.Column="0" Text="تهيئة" Style="{DynamicResource PrimaryButton}" Command="{Binding InitializeCommand}"
-                                IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}" />
-                        <Button Grid.Column="1" Text="تسجيل الجهاز" Style="{DynamicResource PrimaryButton}" Command="{Binding SetupCommand}"
-                                IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}" />
-                        <Button Grid.Column="2" Text="مسح السجل" Style="{DynamicResource PrimaryButton}" Command="{Binding ClearLogCommand}"
-                                IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}" />
-                    </Grid>
-
                     <Button Text="تجهيز الجهاز (صلاحيات)"
                             Style="{DynamicResource PrimaryButton}"
                             Command="{Binding PrepareDeviceCommand}"
@@ -352,11 +266,6 @@
                     <Button Text="إعدادات NearPay"
                             Style="{DynamicResource PrimaryButton}"
                             Command="{Binding OpenSettingsCommand}"
-                            IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}" />
-
-                    <Button Text="اختبار شراء (زر واحد)"
-                            Style="{DynamicResource SuccessButton}"
-                            Command="{Binding RunOneButtonPurchaseCommand}"
                             IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}" />
 
                     <Grid ColumnDefinitions="*,*" ColumnSpacing="10">

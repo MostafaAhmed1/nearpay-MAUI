@@ -19,9 +19,12 @@ public sealed class NearpayServiceAndroid : INearpayService
 
     public bool IsInitialized => _nearPay is not null;
 
-    public Task InitializeAsync(NearpayInitializationRequest request, CancellationToken ct = default)
+    public async Task InitializeAsync(NearpayInitializationRequest request, CancellationToken ct = default)
     {
         ct.ThrowIfCancellationRequested();
+
+        ValidateRequest(request);
+        await EnsureAndroidRuntimePermissionsAsync(ct);
 
         var activity = Platform.CurrentActivity
             ?? throw new InvalidOperationException("لا يوجد Activity حالي. جرّب إعادة فتح التطبيق ثم المحاولة مرة أخرى.");
@@ -31,13 +34,15 @@ public sealed class NearpayServiceAndroid : INearpayService
             .Environment(MapEnvironment(request.Environment))
             .AuthenticationData(MapAuth(request))
             .Locale(ToLocale(request.Locale))
+            .NetworkConfiguration(NetworkConfiguration.SimPreferred!)
+            .UiPosition(UIPosition.CenterBottom!)
+            .SupportSecondDisplay(SupportSecondDisplay.Disable!)
             .LoadingUi(true);
 
         // Optional: customize payment text (Arabic/English)
         builder.PaymentText(new PaymentText("يرجى تمرير البطاقة", "please tap your card"));
 
         _nearPay = builder.Build();
-        return Task.CompletedTask;
     }
 
     public async Task<NearpayOperationResult> SetupAsync(CancellationToken ct = default)
@@ -48,7 +53,10 @@ public sealed class NearpayServiceAndroid : INearpayService
         using var reg = ct.Register(() => tcs.TrySetCanceled(ct));
 
         await MainThread.InvokeOnMainThreadAsync(() =>
-            nearPay.Setup(new SetupListener(tcs)));
+        {
+            try { nearPay.Setup(new SetupListener(tcs)); }
+            catch (Exception ex) { tcs.TrySetResult(new NearpayOperationResult(false, NearpaySdkRawDump.Explain("Setup", ex))); }
+        });
         return await tcs.Task.ConfigureAwait(false);
     }
 
@@ -60,7 +68,10 @@ public sealed class NearpayServiceAndroid : INearpayService
         using var reg = ct.Register(() => tcs.TrySetCanceled(ct));
 
         await MainThread.InvokeOnMainThreadAsync(() =>
-            nearPay.DeviceCompatibility(new CompatibilityListener(tcs)));
+        {
+            try { nearPay.DeviceCompatibility(new CompatibilityListener(tcs)); }
+            catch (Exception ex) { tcs.TrySetResult(new NearpayOperationResult<string>(false, NearpaySdkRawDump.Explain("DeviceCompatibility", ex), NearpaySdkRawDump.Dump(ex))); }
+        });
         return await tcs.Task.ConfigureAwait(false);
     }
 
@@ -72,7 +83,10 @@ public sealed class NearpayServiceAndroid : INearpayService
         using var reg = ct.Register(() => tcs.TrySetCanceled(ct));
 
         await MainThread.InvokeOnMainThreadAsync(() =>
-            nearPay.GetUserSession(new CheckSessionListener(tcs)));
+        {
+            try { nearPay.GetUserSession(new CheckSessionListener(tcs)); }
+            catch (Exception ex) { tcs.TrySetResult(new NearpayOperationResult<string>(false, NearpaySdkRawDump.Explain("GetUserSession", ex), NearpaySdkRawDump.Dump(ex))); }
+        });
         return await tcs.Task.ConfigureAwait(false);
     }
 
@@ -84,15 +98,26 @@ public sealed class NearpayServiceAndroid : INearpayService
         using var reg = ct.Register(() => tcs.TrySetCanceled(ct));
 
         await MainThread.InvokeOnMainThreadAsync(() =>
-            nearPay.Purchase(
-                amount: request.AmountMinor,
-                customerReferenceNumber: request.CustomerReferenceNumber,
-                enableReceiptUi: request.EnableReceiptUi,
-                enableReversal: request.EnableReversal,
-                finishTimeOut: request.FinishTimeoutSeconds,
-                requestId: request.RequestId is null ? null : UUID.FromString(request.RequestId.Value.ToString()),
-                enableUiDismiss: request.EnableUiDismiss,
-                listener: new PurchaseListener(tcs)));
+        {
+            try
+            {
+                nearPay.Purchase(
+                    amount: request.AmountMinor,
+                    customerReferenceNumber: request.CustomerReferenceNumber,
+                    enableReceiptUi: request.EnableReceiptUi,
+                    enableReversal: request.EnableReversal,
+                    finishTimeOut: request.FinishTimeoutSeconds,
+                    requestId: request.RequestId is null ? null : UUID.FromString(request.RequestId.Value.ToString()),
+                    enableUiDismiss: request.EnableUiDismiss,
+                    listener: new PurchaseListener(tcs));
+            }
+            catch (Exception ex)
+            {
+                tcs.TrySetResult(new NearpayOperationResult<NearpayTransactionResult>(
+                    false,
+                    NearpaySdkRawDump.Explain("Purchase", ex)));
+            }
+        });
 
         return await tcs.Task.ConfigureAwait(false);
     }
@@ -105,18 +130,29 @@ public sealed class NearpayServiceAndroid : INearpayService
         using var reg = ct.Register(() => tcs.TrySetCanceled(ct));
 
         await MainThread.InvokeOnMainThreadAsync(() =>
-            nearPay.Refund(
-                amount: request.AmountMinor,
-                transactionUuid: request.TransactionUuid,
-                customerReferenceNumber: request.CustomerReferenceNumber,
-                enableReceiptUi: request.EnableReceiptUi,
-                enableReversal: request.EnableReversal,
-                enableEditableRefundAmountUi: request.EnableEditableRefundAmountUi,
-                finishTimeOut: request.FinishTimeoutSeconds,
-                requestId: request.RequestId is null ? null : UUID.FromString(request.RequestId.Value.ToString()),
-                adminPin: request.AdminPin,
-                enableUiDismiss: request.EnableUiDismiss,
-                listener: new RefundListener(tcs)));
+        {
+            try
+            {
+                nearPay.Refund(
+                    amount: request.AmountMinor,
+                    transactionUuid: request.TransactionUuid,
+                    customerReferenceNumber: request.CustomerReferenceNumber,
+                    enableReceiptUi: request.EnableReceiptUi,
+                    enableReversal: request.EnableReversal,
+                    enableEditableRefundAmountUi: request.EnableEditableRefundAmountUi,
+                    finishTimeOut: request.FinishTimeoutSeconds,
+                    requestId: request.RequestId is null ? null : UUID.FromString(request.RequestId.Value.ToString()),
+                    adminPin: request.AdminPin,
+                    enableUiDismiss: request.EnableUiDismiss,
+                    listener: new RefundListener(tcs));
+            }
+            catch (Exception ex)
+            {
+                tcs.TrySetResult(new NearpayOperationResult<NearpayTransactionResult>(
+                    false,
+                    NearpaySdkRawDump.Explain("Refund", ex)));
+            }
+        });
 
         return await tcs.Task.ConfigureAwait(false);
     }
@@ -129,12 +165,23 @@ public sealed class NearpayServiceAndroid : INearpayService
         using var reg = ct.Register(() => tcs.TrySetCanceled(ct));
 
         await MainThread.InvokeOnMainThreadAsync(() =>
-            nearPay.Reverse(
-                transactionUuid: request.TransactionUuid,
-                enableReceiptUi: request.EnableReceiptUi,
-                finishTimeOut: request.FinishTimeoutSeconds,
-                enableUiDismiss: request.EnableUiDismiss,
-                listener: new ReversalListener(tcs)));
+        {
+            try
+            {
+                nearPay.Reverse(
+                    transactionUuid: request.TransactionUuid,
+                    enableReceiptUi: request.EnableReceiptUi,
+                    finishTimeOut: request.FinishTimeoutSeconds,
+                    enableUiDismiss: request.EnableUiDismiss,
+                    listener: new ReversalListener(tcs));
+            }
+            catch (Exception ex)
+            {
+                tcs.TrySetResult(new NearpayOperationResult<NearpayTransactionResult>(
+                    false,
+                    NearpaySdkRawDump.Explain("Reverse", ex)));
+            }
+        });
 
         return await tcs.Task.ConfigureAwait(false);
     }
@@ -147,13 +194,24 @@ public sealed class NearpayServiceAndroid : INearpayService
         using var reg = ct.Register(() => tcs.TrySetCanceled(ct));
 
         await MainThread.InvokeOnMainThreadAsync(() =>
-            nearPay.Reconcile(
-                reconcileId: request.ReconcileId is null ? null : UUID.FromString(request.ReconcileId.Value.ToString()),
-                enableReceiptUi: request.EnableReceiptUi,
-                adminPin: request.AdminPin,
-                finishTimeOut: request.FinishTimeoutSeconds,
-                enableUiDismiss: request.EnableUiDismiss,
-                listener: new ReconcileListener(tcs)));
+        {
+            try
+            {
+                nearPay.Reconcile(
+                    reconcileId: request.ReconcileId is null ? null : UUID.FromString(request.ReconcileId.Value.ToString()),
+                    enableReceiptUi: request.EnableReceiptUi,
+                    adminPin: request.AdminPin,
+                    finishTimeOut: request.FinishTimeoutSeconds,
+                    enableUiDismiss: request.EnableUiDismiss,
+                    listener: new ReconcileListener(tcs));
+            }
+            catch (Exception ex)
+            {
+                tcs.TrySetResult(new NearpayOperationResult<NearpayReconcileResult>(
+                    false,
+                    NearpaySdkRawDump.Explain("Reconcile", ex)));
+            }
+        });
 
         return await tcs.Task.ConfigureAwait(false);
     }
@@ -189,6 +247,41 @@ public sealed class NearpayServiceAndroid : INearpayService
             ? JLocale.Default!
             : JLocale.ForLanguageTag(localeTag);
 
+    private static void ValidateRequest(NearpayInitializationRequest request)
+    {
+        var v = request.AuthValue?.Trim();
+
+        if (request.AuthMode is NearpayAuthMode.Jwt or NearpayAuthMode.Email or NearpayAuthMode.Mobile)
+        {
+            if (string.IsNullOrWhiteSpace(v))
+                throw new InvalidOperationException("طريقة الدخول المختارة تتطلب Auth Value (JWT / Email / Mobile).");
+        }
+    }
+
+    private static async Task EnsureAndroidRuntimePermissionsAsync(CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+
+        var location = await Permissions.CheckStatusAsync<Permissions.LocationWhenInUse>();
+        if (location != PermissionStatus.Granted)
+            location = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
+
+        var phone = await Permissions.CheckStatusAsync<ReadPhoneStatePermission>();
+        if (phone != PermissionStatus.Granted)
+            phone = await Permissions.RequestAsync<ReadPhoneStatePermission>();
+
+        if (location != PermissionStatus.Granted || phone != PermissionStatus.Granted)
+            throw new InvalidOperationException("الرجاء منح صلاحيات Location و Phone State للتطبيق من إعدادات الجهاز ثم إعادة المحاولة.");
+    }
+
+    private sealed class ReadPhoneStatePermission : Permissions.BasePlatformPermission
+    {
+#if ANDROID
+        public override (string androidPermission, bool isRuntime)[] RequiredPermissions
+            => new[] { (global::Android.Manifest.Permission.ReadPhoneState, true) };
+#endif
+    }
+
     // -----------------
     // Listener adapters
     // -----------------
@@ -200,7 +293,7 @@ public sealed class NearpayServiceAndroid : INearpayService
             => tcs.TrySetResult(new NearpayOperationResult(true, "OnSetupCompleted"));
 
         public void OnSetupFailed(SetupFailure setupFailure)
-            => tcs.TrySetResult(new NearpayOperationResult(false, NearpaySdkRawDump.Dump(setupFailure)));
+            => tcs.TrySetResult(new NearpayOperationResult(false, NearpaySdkRawDump.Explain("Setup", setupFailure)));
     }
 
     private sealed class PurchaseListener(TaskCompletionSource<NearpayOperationResult<NearpayTransactionResult>> tcs)
@@ -215,7 +308,7 @@ public sealed class NearpayServiceAndroid : INearpayService
         public void OnPurchaseFailed(PurchaseFailure purchaseFailure)
             => tcs.TrySetResult(new NearpayOperationResult<NearpayTransactionResult>(
                 false,
-                NearpaySdkRawDump.Dump(purchaseFailure)));
+                NearpaySdkRawDump.Explain("Purchase", purchaseFailure)));
     }
 
     private sealed class RefundListener(TaskCompletionSource<NearpayOperationResult<NearpayTransactionResult>> tcs)
@@ -230,7 +323,7 @@ public sealed class NearpayServiceAndroid : INearpayService
         public void OnRefundFailed(RefundFailure refundFailure)
             => tcs.TrySetResult(new NearpayOperationResult<NearpayTransactionResult>(
                 false,
-                NearpaySdkRawDump.Dump(refundFailure)));
+                NearpaySdkRawDump.Explain("Refund", refundFailure)));
     }
 
     private sealed class ReversalListener(TaskCompletionSource<NearpayOperationResult<NearpayTransactionResult>> tcs)
@@ -245,7 +338,7 @@ public sealed class NearpayServiceAndroid : INearpayService
         public void OnReversalFailed(ReversalFailure reversalFailure)
             => tcs.TrySetResult(new NearpayOperationResult<NearpayTransactionResult>(
                 false,
-                NearpaySdkRawDump.Dump(reversalFailure)));
+                NearpaySdkRawDump.Explain("Reverse", reversalFailure)));
     }
 
     private sealed class ReconcileListener(TaskCompletionSource<NearpayOperationResult<NearpayReconcileResult>> tcs)
@@ -263,7 +356,7 @@ public sealed class NearpayServiceAndroid : INearpayService
         public void OnReconcileFailed(ReconcileFailure reconcileFailure)
             => tcs.TrySetResult(new NearpayOperationResult<NearpayReconcileResult>(
                 false,
-                NearpaySdkRawDump.Dump(reconcileFailure)));
+                NearpaySdkRawDump.Explain("Reconcile", reconcileFailure)));
     }
 
     private sealed class CompatibilityListener(TaskCompletionSource<NearpayOperationResult<string>> tcs)
@@ -274,8 +367,8 @@ public sealed class NearpayServiceAndroid : INearpayService
 
         public void OnDeviceIncompatible(CompatibilityFailure compatibilityFailure)
         {
-            var raw = NearpaySdkRawDump.Dump(compatibilityFailure);
-            tcs.TrySetResult(new NearpayOperationResult<string>(false, raw, raw));
+            var explained = NearpaySdkRawDump.Explain("DeviceCompatibility", compatibilityFailure);
+            tcs.TrySetResult(new NearpayOperationResult<string>(false, explained, explained));
         }
     }
 
@@ -293,8 +386,8 @@ public sealed class NearpayServiceAndroid : INearpayService
 
         public void OnSessionFailed(SessionFailure sessionFailure)
         {
-            var raw = NearpaySdkRawDump.Dump(sessionFailure);
-            tcs.TrySetResult(new NearpayOperationResult<string>(false, raw, raw));
+            var explained = NearpaySdkRawDump.Explain("GetUserSession", sessionFailure);
+            tcs.TrySetResult(new NearpayOperationResult<string>(false, explained, explained));
         }
 
         public void OnSessionFree()

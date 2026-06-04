@@ -158,7 +158,7 @@ public partial class MainPageViewModel : ObservableObject
             // Setup قد يفتح واجهة NearPay (تثبيت/تسجيل دخول/اختيار Terminal).
             // لو لم يكتمل خلال فترة طويلة نوقفه لتجنب تجميد الواجهة.
             using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(innerCt);
-            timeoutCts.CancelAfter(TimeSpan.FromMinutes(2));
+            timeoutCts.CancelAfter(TimeSpan.FromMinutes(10));
 
             var result = await _nearpay.SetupAsync(timeoutCts.Token);
             Log(result.Message);
@@ -198,13 +198,17 @@ public partial class MainPageViewModel : ObservableObject
             if (status != PermissionStatus.Granted)
                 status = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
 
+            var phone = await Permissions.CheckStatusAsync<ReadPhoneStatePermission>();
+            if (phone != PermissionStatus.Granted)
+                phone = await Permissions.RequestAsync<ReadPhoneStatePermission>();
+
             // 2) افتح إعدادات التطبيق إذا لم تُمنح الصلاحية (أو يحتاج المستخدم تفعيل Location Service)
-            if (status != PermissionStatus.Granted)
+            if (status != PermissionStatus.Granted || phone != PermissionStatus.Granted)
             {
                 await MainThread.InvokeOnMainThreadAsync(() =>
                     Application.Current!.MainPage!.DisplayAlert(
                         "صلاحيات مطلوبة",
-                        "الرجاء منح صلاحية الموقع للتطبيق، وكذلك تفعيل خدمة الموقع (Location) من إعدادات الجهاز.",
+                        "الرجاء منح صلاحيات Location و Phone State للتطبيق، وكذلك تفعيل خدمة الموقع (Location) من إعدادات الجهاز.",
                         "فتح الإعدادات"));
                 AppInfo.ShowSettingsUI();
             }
@@ -360,45 +364,34 @@ public partial class MainPageViewModel : ObservableObject
     [RelayCommand]
     private async Task RunOneButtonPurchase(CancellationToken ct)
     {
-        // تجربة برمجية واحدة: Initialize -> deviceCompatibility -> getUserSession -> Setup -> Purchase
-        // تعتمد على الإعدادات المحفوظة محلياً (وليست حقول الواجهة).
-        await RunBusyAsync("Running...", async innerCt =>
+        await RunBusyAsync("Running: Initialize → Setup → Purchase ...", async innerCt =>
         {
-            var s = await _settingsStore.LoadAsync();
-
             Log("STEP: Initialize");
             var initReq = new NearpayInitializationRequest(
-                Environment: ParseEnv(s.Environment),
-                AuthMode: ParseAuthMode(s.AuthMode),
-                AuthValue: s.AuthValue ?? string.Empty,
-                Tid: s.Tid ?? string.Empty,
-                Locale: s.Locale ?? "ar-SA");
+                Environment: ParseEnv(SelectedEnvironment),
+                AuthMode: ParseAuthMode(SelectedAuthMode),
+                AuthValue: AuthValue ?? string.Empty,
+                Tid: Tid ?? string.Empty,
+                Locale: Locale ?? "ar-SA");
             await _nearpay.InitializeAsync(initReq, innerCt);
             Log("InitializeAsync: OK");
 
             Log("STEP: Setup");
-            var setup = await _nearpay.SetupAsync(innerCt);
+            using var setupTimeout = CancellationTokenSource.CreateLinkedTokenSource(innerCt);
+            setupTimeout.CancelAfter(TimeSpan.FromMinutes(10));
+            var setup = await _nearpay.SetupAsync(setupTimeout.Token);
             Log(setup.Message);
             if (!setup.IsSuccess) return;
 
-            // اختياري: فحوصات SDK بعد نجاح Setup (لا يجب أن تمنع تجربة الشراء)
-            Log("STEP: DeviceCompatibility");
-            var comp = await _nearpay.DeviceCompatibilityAsync(innerCt);
-            Log(comp.Message);
-
-            Log("STEP: GetUserSession");
-            var sess = await _nearpay.GetUserSessionAsync(innerCt);
-            Log(sess.Message);
-
             Log("STEP: Purchase");
             var purchaseReq = new NearpayPurchaseRequest(
-                AmountMinor: 100, // 1.00
-                CustomerReferenceNumber: "",
-                EnableReceiptUi: true,
-                EnableReversal: true,
-                FinishTimeoutSeconds: 60,
+                AmountMinor: AmountMinor,
+                CustomerReferenceNumber: CustomerReferenceNumber,
+                EnableReceiptUi: EnableReceiptUi,
+                EnableReversal: EnableReversal,
+                FinishTimeoutSeconds: FinishTimeoutSeconds,
                 RequestId: Guid.NewGuid(),
-                EnableUiDismiss: true);
+                EnableUiDismiss: EnableUiDismiss);
 
             var purchase = await _nearpay.PurchaseAsync(purchaseReq, innerCt);
             Log(purchase.IsSuccess
@@ -425,5 +418,13 @@ public partial class MainPageViewModel : ObservableObject
         await Browser.Default.OpenAsync(
             "https://firebasestorage.googleapis.com/v0/b/nearpayio/o/payments-plugins%2Fproduction%2Fpayment-plugin-productionNearpayStore-163-protected.apk?alt=media&token=76303e0d-28f4-44f8-82dc-04363b8313b3",
             BrowserLaunchMode.External);
+    }
+
+    private sealed class ReadPhoneStatePermission : Permissions.BasePlatformPermission
+    {
+#if ANDROID
+        public override (string androidPermission, bool isRuntime)[] RequiredPermissions
+            => new[] { (global::Android.Manifest.Permission.ReadPhoneState, true) };
+#endif
     }
 }
