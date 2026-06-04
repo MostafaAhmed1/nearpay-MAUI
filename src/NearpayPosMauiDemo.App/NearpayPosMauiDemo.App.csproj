@@ -54,6 +54,7 @@
 		<AndroidFastDeploymentType>None</AndroidFastDeploymentType>
 		<EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
 		<AndroidUseSharedRuntime>false</AndroidUseSharedRuntime>
+		<AndroidSdkPlatformVersion>34</AndroidSdkPlatformVersion>
 	</PropertyGroup>
 
 	<ItemGroup>

@@ -24,16 +24,15 @@ public sealed class NearpayServiceAndroid : INearpayService
         ct.ThrowIfCancellationRequested();
 
         ValidateRequest(request);
-        await EnsureAndroidRuntimePermissionsAsync(ct);
 
         var activity = Platform.CurrentActivity
             ?? throw new InvalidOperationException("لا يوجد Activity حالي. جرّب إعادة فتح التطبيق ثم المحاولة مرة أخرى.");
 
         var builder = new NearPay.Builder()
-            .Context(activity.ApplicationContext)
+            .Context(activity)
             .Environment(MapEnvironment(request.Environment))
             .AuthenticationData(MapAuth(request))
-            .Locale(ToLocale(request.Locale));
+            .Locale(JLocale.Default!);
 
         _nearPay = builder.Build();
     }
@@ -249,17 +248,6 @@ public sealed class NearpayServiceAndroid : INearpayService
             if (string.IsNullOrWhiteSpace(v))
                 throw new InvalidOperationException("طريقة الدخول المختارة تتطلب Auth Value (JWT / Email / Mobile).");
         }
-    }
-
-    private static async Task EnsureAndroidRuntimePermissionsAsync(CancellationToken ct)
-    {
-        ct.ThrowIfCancellationRequested();
-
-        var location = await Permissions.CheckStatusAsync<Permissions.LocationWhenInUse>();
-        if (location != PermissionStatus.Granted)
-            location = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
-        if (location != PermissionStatus.Granted)
-            throw new InvalidOperationException("الرجاء منح صلاحية Location للتطبيق من إعدادات الجهاز ثم إعادة المحاولة.");
     }
 
     // -----------------
