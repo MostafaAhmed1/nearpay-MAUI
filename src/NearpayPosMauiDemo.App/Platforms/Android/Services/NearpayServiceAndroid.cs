@@ -30,17 +30,10 @@ public sealed class NearpayServiceAndroid : INearpayService
             ?? throw new InvalidOperationException("لا يوجد Activity حالي. جرّب إعادة فتح التطبيق ثم المحاولة مرة أخرى.");
 
         var builder = new NearPay.Builder()
-            .Context(activity)
+            .Context(activity.ApplicationContext)
             .Environment(MapEnvironment(request.Environment))
             .AuthenticationData(MapAuth(request))
-            .Locale(ToLocale(request.Locale))
-            .NetworkConfiguration(NetworkConfiguration.SimPreferred!)
-            .UiPosition(UIPosition.CenterBottom!)
-            .SupportSecondDisplay(SupportSecondDisplay.Disable!)
-            .LoadingUi(true);
-
-        // Optional: customize payment text (Arabic/English)
-        builder.PaymentText(new PaymentText("يرجى تمرير البطاقة", "please tap your card"));
+            .Locale(ToLocale(request.Locale));
 
         _nearPay = builder.Build();
     }
@@ -265,21 +258,8 @@ public sealed class NearpayServiceAndroid : INearpayService
         var location = await Permissions.CheckStatusAsync<Permissions.LocationWhenInUse>();
         if (location != PermissionStatus.Granted)
             location = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
-
-        var phone = await Permissions.CheckStatusAsync<ReadPhoneStatePermission>();
-        if (phone != PermissionStatus.Granted)
-            phone = await Permissions.RequestAsync<ReadPhoneStatePermission>();
-
-        if (location != PermissionStatus.Granted || phone != PermissionStatus.Granted)
-            throw new InvalidOperationException("الرجاء منح صلاحيات Location و Phone State للتطبيق من إعدادات الجهاز ثم إعادة المحاولة.");
-    }
-
-    private sealed class ReadPhoneStatePermission : Permissions.BasePlatformPermission
-    {
-#if ANDROID
-        public override (string androidPermission, bool isRuntime)[] RequiredPermissions
-            => new[] { (global::Android.Manifest.Permission.ReadPhoneState, true) };
-#endif
+        if (location != PermissionStatus.Granted)
+            throw new InvalidOperationException("الرجاء منح صلاحية Location للتطبيق من إعدادات الجهاز ثم إعادة المحاولة.");
     }
 
     // -----------------

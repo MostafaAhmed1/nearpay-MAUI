@@ -17,9 +17,9 @@
 
   <ItemGroup>
     <!-- NearPay Payment Plugin SDK (public Maven artifact). -->
-    <AndroidMavenLibrary Include="io.nearpay:nearpay-sdk" Version="2.1.98" VerifyDependencies="false" />
-    <AndroidMavenLibrary Include="io.nearpay:nearpay-sdk-shared-public" Version="2.1.98" VerifyDependencies="false" />
-    <AndroidMavenLibrary Include="io.nearpay:nearpay-sdk-shared-internal" Version="2.1.98" VerifyDependencies="false" />
+    <AndroidMavenLibrary Include="io.nearpay:nearpay-sdk" Version="2.1.94" VerifyDependencies="false" />
+    <AndroidMavenLibrary Include="io.nearpay:nearpay-sdk-shared-public" Version="2.1.94" VerifyDependencies="false" />
+    <AndroidMavenLibrary Include="io.nearpay:nearpay-sdk-shared-internal" Version="2.1.94" VerifyDependencies="false" />
   </ItemGroup>
 
   <ItemGroup>

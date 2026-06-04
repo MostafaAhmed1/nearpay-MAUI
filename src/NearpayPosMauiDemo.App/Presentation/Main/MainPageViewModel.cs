@@ -198,17 +198,13 @@ public partial class MainPageViewModel : ObservableObject
             if (status != PermissionStatus.Granted)
                 status = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
 
-            var phone = await Permissions.CheckStatusAsync<ReadPhoneStatePermission>();
-            if (phone != PermissionStatus.Granted)
-                phone = await Permissions.RequestAsync<ReadPhoneStatePermission>();
-
             // 2) افتح إعدادات التطبيق إذا لم تُمنح الصلاحية (أو يحتاج المستخدم تفعيل Location Service)
-            if (status != PermissionStatus.Granted || phone != PermissionStatus.Granted)
+            if (status != PermissionStatus.Granted)
             {
                 await MainThread.InvokeOnMainThreadAsync(() =>
                     Application.Current!.MainPage!.DisplayAlert(
                         "صلاحيات مطلوبة",
-                        "الرجاء منح صلاحيات Location و Phone State للتطبيق، وكذلك تفعيل خدمة الموقع (Location) من إعدادات الجهاز.",
+                        "الرجاء منح صلاحية Location للتطبيق، وكذلك تفعيل خدمة الموقع (Location) من إعدادات الجهاز.",
                         "فتح الإعدادات"));
                 AppInfo.ShowSettingsUI();
             }
@@ -420,11 +416,4 @@ public partial class MainPageViewModel : ObservableObject
             BrowserLaunchMode.External);
     }
 
-    private sealed class ReadPhoneStatePermission : Permissions.BasePlatformPermission
-    {
-#if ANDROID
-        public override (string androidPermission, bool isRuntime)[] RequiredPermissions
-            => new[] { (global::Android.Manifest.Permission.ReadPhoneState, true) };
-#endif
-    }
 }
