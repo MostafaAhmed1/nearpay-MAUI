@@ -54,7 +54,7 @@
 		<AndroidFastDeploymentType>None</AndroidFastDeploymentType>
 		<EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
 		<AndroidUseSharedRuntime>false</AndroidUseSharedRuntime>
-		<AndroidSdkPlatformVersion>34</AndroidSdkPlatformVersion>
+		<AndroidSdkPlatformVersion>36</AndroidSdkPlatformVersion>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -76,7 +76,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
+		<PackageReference Include="Microsoft.Maui.Controls" Version="9.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
 		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
 	</ItemGroup>
@@ -87,10 +87,7 @@
 
 	<!-- Android-only binding reference (the app is multi-targeted). -->
 	<ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">
-		<ProjectReference Include="..\NearpayPosMauiDemo.NearpayBindings.Android\NearpayPosMauiDemo.NearpayBindings.Android.csproj" />
-		<!-- NearPay SDK uses these resources (sdp/ssp) in its layouts. -->
-		<AndroidMavenLibrary Include="com.intuit.sdp:sdp-android" Version="1.1.0" Bind="false" VerifyDependencies="false" />
-		<AndroidMavenLibrary Include="com.intuit.ssp:ssp-android" Version="1.1.0" Bind="false" VerifyDependencies="false" />
+		<PackageReference Include="Xamarin.NearpayStoreSDK" Version="2.1.98.1" />
 	</ItemGroup>
 
 </Project>

@@ -2,6 +2,5 @@
   <Folder Name="/src/">
     <Project Path="src/NearpayPosMauiDemo.App/NearpayPosMauiDemo.App.csproj" />
     <Project Path="src/NearpayPosMauiDemo.Core/NearpayPosMauiDemo.Core.csproj" />
-    <Project Path="src/NearpayPosMauiDemo.NearpayBindings.Android/NearpayPosMauiDemo.NearpayBindings.Android.csproj" />
   </Folder>
 </Solution>
