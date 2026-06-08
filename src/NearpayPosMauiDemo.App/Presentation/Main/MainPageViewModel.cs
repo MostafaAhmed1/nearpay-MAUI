@@ -103,8 +103,8 @@ public partial class MainPageViewModel : ObservableObject
         try
         {
             var s = await _settingsStore.LoadAsync();
-            SelectedEnvironment = s.Environment;
-            SelectedAuthMode = s.AuthMode;
+            SelectedEnvironment = string.IsNullOrWhiteSpace(s.Environment) ? NearpayEnvironment.Sandbox.ToString() : s.Environment;
+            SelectedAuthMode = string.IsNullOrWhiteSpace(s.AuthMode) ? NearpayAuthMode.UserEnter.ToString() : s.AuthMode;
             AuthValue = s.AuthValue ?? "";
         }
         catch
@@ -118,13 +118,24 @@ public partial class MainPageViewModel : ObservableObject
     {
         await RunBusyAsync("Running: Initialize → Setup → Purchase ...", async innerCt =>
         {
+            var authMode = ParseAuthMode(SelectedAuthMode);
+            var authValue = AuthValue?.Trim();
+            if (authMode is NearpayAuthMode.Jwt or NearpayAuthMode.Email or NearpayAuthMode.Mobile)
+            {
+                if (string.IsNullOrWhiteSpace(authValue))
+                {
+                    Log("AuthValue مطلوب لهذه الطريقة. اكتب JWT/Email/Mobile أو اختر UserEnter.");
+                    return;
+                }
+            }
+
             Log("STEP: Initialize");
             var initReq = new NearpayInitializationRequest(
                 Environment: ParseEnv(SelectedEnvironment),
-                AuthMode: ParseAuthMode(SelectedAuthMode),
-                AuthValue: AuthValue ?? string.Empty,
+                AuthMode: authMode,
+                AuthValue: authValue ?? string.Empty,
                 Tid: "",
-                Locale: "default");
+                Locale: null);
             await _nearpay.InitializeAsync(initReq, innerCt);
             Log("InitializeAsync: OK");
 

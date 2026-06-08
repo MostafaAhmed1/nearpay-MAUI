@@ -288,7 +288,7 @@ public sealed class NearpayServiceAndroid : INearpayService
         if (request.AuthMode is NearpayAuthMode.Jwt or NearpayAuthMode.Email or NearpayAuthMode.Mobile)
         {
             if (string.IsNullOrWhiteSpace(v))
-                throw new InvalidOperationException("طريقة الدخول المختارة تتطلب Auth Value (JWT / Email / Mobile).");
+                throw new InvalidOperationException("طريقة الدخول المختارة تتطلب Auth Value. اكتب JWT/Email/Mobile أو اختر UserEnter.");
         }
     }
 
