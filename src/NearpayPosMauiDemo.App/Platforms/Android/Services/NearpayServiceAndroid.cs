@@ -16,6 +16,7 @@ namespace NearpayPosMauiDemo.App.Platforms.Android.Services;
 public sealed class NearpayServiceAndroid : INearpayService
 {
     private NearPay? _nearPay;
+    private NearpayEnvironment? _lastEnvironment;
 
     public bool IsInitialized => _nearPay is not null;
 
@@ -24,6 +25,7 @@ public sealed class NearpayServiceAndroid : INearpayService
         ct.ThrowIfCancellationRequested();
 
         ValidateRequest(request);
+        _lastEnvironment = request.Environment;
 
         var activity = Platform.CurrentActivity
             ?? throw new InvalidOperationException("لا يوجد Activity حالي. جرّب إعادة فتح التطبيق ثم المحاولة مرة أخرى.");
@@ -40,6 +42,13 @@ public sealed class NearpayServiceAndroid : INearpayService
     public async Task<NearpayOperationResult> SetupAsync(CancellationToken ct = default)
     {
         var nearPay = EnsureInitialized();
+        var activity = Platform.CurrentActivity;
+        if (activity is not null)
+        {
+            var preflight = TryPreflightPaymentPlugin(activity);
+            if (preflight is not null)
+                return preflight;
+        }
 
         var tcs = new TaskCompletionSource<NearpayOperationResult>(TaskCreationOptions.RunContinuationsAsynchronously);
         using var reg = ct.Register(() => tcs.TrySetCanceled(ct));
@@ -50,6 +59,39 @@ public sealed class NearpayServiceAndroid : INearpayService
             catch (Exception ex) { tcs.TrySetResult(new NearpayOperationResult(false, NearpaySdkRawDump.Explain("Setup", ex))); }
         });
         return await tcs.Task.ConfigureAwait(false);
+    }
+
+    private NearpayOperationResult? TryPreflightPaymentPlugin(global::Android.App.Activity activity)
+    {
+        if (_lastEnvironment is null)
+            return null;
+
+        string? pluginPackage = null;
+        try
+        {
+            pluginPackage = _lastEnvironment == NearpayEnvironment.Production
+                ? IO.Nearpay.Sdk_internal.Data.DataEnvironments.Production!.PluginPackageName
+                : IO.Nearpay.Sdk_internal.Data.DataEnvironments.Sandbox!.PluginPackageName;
+        }
+        catch
+        {
+            return null;
+        }
+
+        if (string.IsNullOrWhiteSpace(pluginPackage))
+            return null;
+
+        try
+        {
+            _ = activity.PackageManager?.GetPackageInfo(pluginPackage, 0);
+            return null;
+        }
+        catch (global::Android.Content.PM.PackageManager.NameNotFoundException)
+        {
+            return new NearpayOperationResult(
+                false,
+                $"NearPay: Payment Plugin غير مثبت ({pluginPackage}).");
+        }
     }
 
     public async Task<NearpayOperationResult<string>> DeviceCompatibilityAsync(CancellationToken ct = default)
