@@ -10,6 +10,9 @@ public sealed class NearpayServiceStub : INearpayService
     public Task InitializeAsync(NearpayInitializationRequest request, CancellationToken ct = default)
         => throw new PlatformNotSupportedException("NearPay SDK مدعوم على Android فقط.");
 
+    public Task<NearpayOperationResult> PrepareAsync(NearpayInitializationRequest request, CancellationToken ct = default)
+        => Task.FromResult(new NearpayOperationResult(false, "غير مدعوم على هذا النظام"));
+
     public Task<NearpayOperationResult> SetupAsync(CancellationToken ct = default)
         => Task.FromResult(new NearpayOperationResult(false, "غير مدعوم على هذا النظام"));
 
@@ -18,6 +21,17 @@ public sealed class NearpayServiceStub : INearpayService
 
     public Task<NearpayOperationResult<string>> GetUserSessionAsync(CancellationToken ct = default)
         => Task.FromResult(new NearpayOperationResult<string>(false, "غير مدعوم على هذا النظام"));
+
+    public Task<NearpayOperationResult> DismissAsync(CancellationToken ct = default)
+        => Task.FromResult(new NearpayOperationResult(false, "غير مدعوم على هذا النظام"));
+
+    public Task<NearpayOperationResult> LogoutAsync(CancellationToken ct = default)
+        => Task.FromResult(new NearpayOperationResult(false, "غير مدعوم على هذا النظام"));
+
+    public Task<NearpayOperationResult<NearpayReconcileResult>> GetReconciliationReceiptAsync(
+        NearpayReconciliationReceiptRequest request,
+        CancellationToken ct = default)
+        => Task.FromResult(new NearpayOperationResult<NearpayReconcileResult>(false, "غير مدعوم على هذا النظام"));
 
     public Task<NearpayOperationResult<NearpayTransactionResult>> PurchaseAsync(NearpayPurchaseRequest request, CancellationToken ct = default)
         => Task.FromResult(new NearpayOperationResult<NearpayTransactionResult>(false, "غير مدعوم على هذا النظام"));

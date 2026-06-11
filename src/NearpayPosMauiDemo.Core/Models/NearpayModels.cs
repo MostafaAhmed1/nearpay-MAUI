@@ -25,6 +25,12 @@ public sealed record NearpayInitializationRequest(
     string? Locale = null // e.g. "ar-SA" or "en-US"
 );
 
+public sealed record NearpayReconciliationReceiptRequest(
+    string ReconciliationUuid,
+    bool EnableReceiptUi,
+    long FinishTimeoutSeconds
+);
+
 public sealed record NearpayPurchaseRequest(
     long AmountMinor, // 1455 => 14.55
     string? CustomerReferenceNumber,

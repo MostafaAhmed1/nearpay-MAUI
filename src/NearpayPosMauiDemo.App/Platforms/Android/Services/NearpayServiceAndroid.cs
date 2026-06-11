@@ -1,4 +1,3 @@
-using Android.App;
 using NearpayPosMauiDemo.Core.Abstractions;
 using NearpayPosMauiDemo.Core.Models;
 
@@ -7,8 +6,8 @@ using IO.Nearpay.Sdk.Data.Models;
 using IO.Nearpay.Sdk.Utils;
 using IO.Nearpay.Sdk.Utils.Enums;
 using IO.Nearpay.Sdk.Utils.Listeners;
-using JLocale = Java.Util.Locale;
 using Java.Util;
+using JLocale = Java.Util.Locale;
 using Microsoft.Maui.ApplicationModel;
 
 namespace NearpayPosMauiDemo.App.Platforms.Android.Services;
@@ -34,9 +33,28 @@ public sealed class NearpayServiceAndroid : INearpayService
             .Context(activity)
             .Environment(MapEnvironment(request.Environment))
             .AuthenticationData(MapAuth(request))
-            .Locale(JLocale.Default!);
+            .Locale(ToLocale(request.Locale));
 
         _nearPay = builder.Build();
+    }
+
+    public async Task<NearpayOperationResult> PrepareAsync(
+        NearpayInitializationRequest request,
+        CancellationToken ct = default)
+    {
+        try
+        {
+            await InitializeAsync(request, ct).ConfigureAwait(false);
+            return await SetupAsync(ct).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return Fail("Prepare", ex);
+        }
     }
 
     public async Task<NearpayOperationResult> SetupAsync(CancellationToken ct = default)
@@ -50,15 +68,161 @@ public sealed class NearpayServiceAndroid : INearpayService
                 return preflight;
         }
 
-        var tcs = new TaskCompletionSource<NearpayOperationResult>(TaskCreationOptions.RunContinuationsAsynchronously);
-        using var reg = ct.Register(() => tcs.TrySetCanceled(ct));
+        var tcs = CreateCompletionSource<NearpayOperationResult>();
+        return await ExecuteOnMainThreadAsync(
+            tcs,
+            () => nearPay.Setup(new SetupListener(tcs)),
+            ct,
+            ex => Fail("Setup", ex)).ConfigureAwait(false);
+    }
 
-        await MainThread.InvokeOnMainThreadAsync(() =>
-        {
-            try { nearPay.Setup(new SetupListener(tcs)); }
-            catch (Exception ex) { tcs.TrySetResult(new NearpayOperationResult(false, NearpaySdkRawDump.Explain("Setup", ex))); }
-        });
-        return await tcs.Task.ConfigureAwait(false);
+    public async Task<NearpayOperationResult<string>> DeviceCompatibilityAsync(CancellationToken ct = default)
+    {
+        var nearPay = EnsureInitialized();
+        var tcs = CreateCompletionSource<NearpayOperationResult<string>>();
+        return await ExecuteOnMainThreadAsync(
+            tcs,
+            () => nearPay.DeviceCompatibility(new CompatibilityListener(tcs)),
+            ct,
+            ex => Fail<string>("DeviceCompatibility", ex)).ConfigureAwait(false);
+    }
+
+    public async Task<NearpayOperationResult<string>> GetUserSessionAsync(CancellationToken ct = default)
+    {
+        var nearPay = EnsureInitialized();
+        var tcs = CreateCompletionSource<NearpayOperationResult<string>>();
+        return await ExecuteOnMainThreadAsync(
+            tcs,
+            () => nearPay.GetUserSession(new CheckSessionListener(tcs)),
+            ct,
+            ex => Fail<string>("GetUserSession", ex)).ConfigureAwait(false);
+    }
+
+    public async Task<NearpayOperationResult> DismissAsync(CancellationToken ct = default)
+    {
+        var nearPay = EnsureInitialized();
+        var tcs = CreateCompletionSource<NearpayOperationResult>();
+        return await ExecuteOnMainThreadAsync(
+            tcs,
+            () => nearPay.Dismiss(new DismissListener(tcs)),
+            ct,
+            ex => Fail("Dismiss", ex)).ConfigureAwait(false);
+    }
+
+    public async Task<NearpayOperationResult> LogoutAsync(CancellationToken ct = default)
+    {
+        var nearPay = EnsureInitialized();
+        var tcs = CreateCompletionSource<NearpayOperationResult>();
+        return await ExecuteOnMainThreadAsync(
+            tcs,
+            () => nearPay.Logout(new LogoutListener(tcs)),
+            ct,
+            ex => Fail("Logout", ex)).ConfigureAwait(false);
+    }
+
+    public async Task<NearpayOperationResult<NearpayReconcileResult>> GetReconciliationReceiptAsync(
+        NearpayReconciliationReceiptRequest request,
+        CancellationToken ct = default)
+    {
+        ValidateRequired(request.ReconciliationUuid, "ReconciliationUuid");
+
+        var nearPay = EnsureInitialized();
+        var tcs = CreateCompletionSource<NearpayOperationResult<NearpayReconcileResult>>();
+        return await ExecuteOnMainThreadAsync(
+            tcs,
+            () => nearPay.GetReconciliationByUuid(
+                request.ReconciliationUuid,
+                request.EnableReceiptUi,
+                request.FinishTimeoutSeconds,
+                new GetReconcileReceiptListener(tcs)),
+            ct,
+            ex => Fail<NearpayReconcileResult>("GetReconciliationReceipt", ex)).ConfigureAwait(false);
+    }
+
+    public async Task<NearpayOperationResult<NearpayTransactionResult>> PurchaseAsync(
+        NearpayPurchaseRequest request,
+        CancellationToken ct = default)
+    {
+        var nearPay = EnsureInitialized();
+        var tcs = CreateCompletionSource<NearpayOperationResult<NearpayTransactionResult>>();
+        return await ExecuteOnMainThreadAsync(
+            tcs,
+            () => nearPay.Purchase(
+                amount: request.AmountMinor,
+                customerReferenceNumber: request.CustomerReferenceNumber,
+                enableReceiptUi: request.EnableReceiptUi,
+                enableReversal: request.EnableReversal,
+                finishTimeOut: request.FinishTimeoutSeconds,
+                requestId: ToJavaUuid(request.RequestId),
+                enableUiDismiss: request.EnableUiDismiss,
+                listener: new PurchaseListener(tcs)),
+            ct,
+            ex => Fail<NearpayTransactionResult>("Purchase", ex)).ConfigureAwait(false);
+    }
+
+    public async Task<NearpayOperationResult<NearpayTransactionResult>> RefundAsync(
+        NearpayRefundRequest request,
+        CancellationToken ct = default)
+    {
+        ValidateRequired(request.TransactionUuid, "TransactionUuid");
+
+        var nearPay = EnsureInitialized();
+        var tcs = CreateCompletionSource<NearpayOperationResult<NearpayTransactionResult>>();
+        return await ExecuteOnMainThreadAsync(
+            tcs,
+            () => nearPay.Refund(
+                amount: request.AmountMinor,
+                transactionUuid: request.TransactionUuid,
+                customerReferenceNumber: request.CustomerReferenceNumber,
+                enableReceiptUi: request.EnableReceiptUi,
+                enableReversal: request.EnableReversal,
+                enableEditableRefundAmountUi: request.EnableEditableRefundAmountUi,
+                finishTimeOut: request.FinishTimeoutSeconds,
+                requestId: ToJavaUuid(request.RequestId),
+                adminPin: request.AdminPin,
+                enableUiDismiss: request.EnableUiDismiss,
+                listener: new RefundListener(tcs)),
+            ct,
+            ex => Fail<NearpayTransactionResult>("Refund", ex)).ConfigureAwait(false);
+    }
+
+    public async Task<NearpayOperationResult<NearpayTransactionResult>> ReverseAsync(
+        NearpayReverseRequest request,
+        CancellationToken ct = default)
+    {
+        ValidateRequired(request.TransactionUuid, "TransactionUuid");
+
+        var nearPay = EnsureInitialized();
+        var tcs = CreateCompletionSource<NearpayOperationResult<NearpayTransactionResult>>();
+        return await ExecuteOnMainThreadAsync(
+            tcs,
+            () => nearPay.Reverse(
+                transactionUuid: request.TransactionUuid,
+                enableReceiptUi: request.EnableReceiptUi,
+                finishTimeOut: request.FinishTimeoutSeconds,
+                enableUiDismiss: request.EnableUiDismiss,
+                listener: new ReversalListener(tcs)),
+            ct,
+            ex => Fail<NearpayTransactionResult>("Reverse", ex)).ConfigureAwait(false);
+    }
+
+    public async Task<NearpayOperationResult<NearpayReconcileResult>> ReconcileAsync(
+        NearpayReconcileRequest request,
+        CancellationToken ct = default)
+    {
+        var nearPay = EnsureInitialized();
+        var tcs = CreateCompletionSource<NearpayOperationResult<NearpayReconcileResult>>();
+        return await ExecuteOnMainThreadAsync(
+            tcs,
+            () => nearPay.Reconcile(
+                reconcileId: ToJavaUuid(request.ReconcileId),
+                enableReceiptUi: request.EnableReceiptUi,
+                adminPin: request.AdminPin,
+                finishTimeOut: request.FinishTimeoutSeconds,
+                enableUiDismiss: request.EnableUiDismiss,
+                listener: new ReconcileListener(tcs)),
+            ct,
+            ex => Fail<NearpayReconcileResult>("Reconcile", ex)).ConfigureAwait(false);
     }
 
     private NearpayOperationResult? TryPreflightPaymentPlugin(global::Android.App.Activity activity)
@@ -88,170 +252,38 @@ public sealed class NearpayServiceAndroid : INearpayService
         }
         catch (global::Android.Content.PM.PackageManager.NameNotFoundException)
         {
-            return new NearpayOperationResult(
-                false,
-                $"NearPay: Payment Plugin غير مثبت ({pluginPackage}).");
+            return new NearpayOperationResult(false, $"NearPay: Payment Plugin غير مثبت ({pluginPackage}).");
         }
     }
 
-    public async Task<NearpayOperationResult<string>> DeviceCompatibilityAsync(CancellationToken ct = default)
-    {
-        var nearPay = EnsureInitialized();
-
-        var tcs = new TaskCompletionSource<NearpayOperationResult<string>>(TaskCreationOptions.RunContinuationsAsynchronously);
-        using var reg = ct.Register(() => tcs.TrySetCanceled(ct));
-
-        await MainThread.InvokeOnMainThreadAsync(() =>
-        {
-            try { nearPay.DeviceCompatibility(new CompatibilityListener(tcs)); }
-            catch (Exception ex) { tcs.TrySetResult(new NearpayOperationResult<string>(false, NearpaySdkRawDump.Explain("DeviceCompatibility", ex), NearpaySdkRawDump.Dump(ex))); }
-        });
-        return await tcs.Task.ConfigureAwait(false);
-    }
-
-    public async Task<NearpayOperationResult<string>> GetUserSessionAsync(CancellationToken ct = default)
-    {
-        var nearPay = EnsureInitialized();
-
-        var tcs = new TaskCompletionSource<NearpayOperationResult<string>>(TaskCreationOptions.RunContinuationsAsynchronously);
-        using var reg = ct.Register(() => tcs.TrySetCanceled(ct));
-
-        await MainThread.InvokeOnMainThreadAsync(() =>
-        {
-            try { nearPay.GetUserSession(new CheckSessionListener(tcs)); }
-            catch (Exception ex) { tcs.TrySetResult(new NearpayOperationResult<string>(false, NearpaySdkRawDump.Explain("GetUserSession", ex), NearpaySdkRawDump.Dump(ex))); }
-        });
-        return await tcs.Task.ConfigureAwait(false);
-    }
-
-    public async Task<NearpayOperationResult<NearpayTransactionResult>> PurchaseAsync(NearpayPurchaseRequest request, CancellationToken ct = default)
-    {
-        var nearPay = EnsureInitialized();
-
-        var tcs = new TaskCompletionSource<NearpayOperationResult<NearpayTransactionResult>>(TaskCreationOptions.RunContinuationsAsynchronously);
-        using var reg = ct.Register(() => tcs.TrySetCanceled(ct));
-
-        await MainThread.InvokeOnMainThreadAsync(() =>
-        {
-            try
-            {
-                nearPay.Purchase(
-                    amount: request.AmountMinor,
-                    customerReferenceNumber: request.CustomerReferenceNumber,
-                    enableReceiptUi: request.EnableReceiptUi,
-                    enableReversal: request.EnableReversal,
-                    finishTimeOut: request.FinishTimeoutSeconds,
-                    requestId: request.RequestId is null ? null : UUID.FromString(request.RequestId.Value.ToString()),
-                    enableUiDismiss: request.EnableUiDismiss,
-                    listener: new PurchaseListener(tcs));
-            }
-            catch (Exception ex)
-            {
-                tcs.TrySetResult(new NearpayOperationResult<NearpayTransactionResult>(
-                    false,
-                    NearpaySdkRawDump.Explain("Purchase", ex)));
-            }
-        });
-
-        return await tcs.Task.ConfigureAwait(false);
-    }
-
-    public async Task<NearpayOperationResult<NearpayTransactionResult>> RefundAsync(NearpayRefundRequest request, CancellationToken ct = default)
-    {
-        var nearPay = EnsureInitialized();
-
-        var tcs = new TaskCompletionSource<NearpayOperationResult<NearpayTransactionResult>>(TaskCreationOptions.RunContinuationsAsynchronously);
-        using var reg = ct.Register(() => tcs.TrySetCanceled(ct));
-
-        await MainThread.InvokeOnMainThreadAsync(() =>
-        {
-            try
-            {
-                nearPay.Refund(
-                    amount: request.AmountMinor,
-                    transactionUuid: request.TransactionUuid,
-                    customerReferenceNumber: request.CustomerReferenceNumber,
-                    enableReceiptUi: request.EnableReceiptUi,
-                    enableReversal: request.EnableReversal,
-                    enableEditableRefundAmountUi: request.EnableEditableRefundAmountUi,
-                    finishTimeOut: request.FinishTimeoutSeconds,
-                    requestId: request.RequestId is null ? null : UUID.FromString(request.RequestId.Value.ToString()),
-                    adminPin: request.AdminPin,
-                    enableUiDismiss: request.EnableUiDismiss,
-                    listener: new RefundListener(tcs));
-            }
-            catch (Exception ex)
-            {
-                tcs.TrySetResult(new NearpayOperationResult<NearpayTransactionResult>(
-                    false,
-                    NearpaySdkRawDump.Explain("Refund", ex)));
-            }
-        });
-
-        return await tcs.Task.ConfigureAwait(false);
-    }
-
-    public async Task<NearpayOperationResult<NearpayTransactionResult>> ReverseAsync(NearpayReverseRequest request, CancellationToken ct = default)
-    {
-        var nearPay = EnsureInitialized();
-
-        var tcs = new TaskCompletionSource<NearpayOperationResult<NearpayTransactionResult>>(TaskCreationOptions.RunContinuationsAsynchronously);
-        using var reg = ct.Register(() => tcs.TrySetCanceled(ct));
-
-        await MainThread.InvokeOnMainThreadAsync(() =>
-        {
-            try
-            {
-                nearPay.Reverse(
-                    transactionUuid: request.TransactionUuid,
-                    enableReceiptUi: request.EnableReceiptUi,
-                    finishTimeOut: request.FinishTimeoutSeconds,
-                    enableUiDismiss: request.EnableUiDismiss,
-                    listener: new ReversalListener(tcs));
-            }
-            catch (Exception ex)
-            {
-                tcs.TrySetResult(new NearpayOperationResult<NearpayTransactionResult>(
-                    false,
-                    NearpaySdkRawDump.Explain("Reverse", ex)));
-            }
-        });
-
-        return await tcs.Task.ConfigureAwait(false);
-    }
-
-    public async Task<NearpayOperationResult<NearpayReconcileResult>> ReconcileAsync(NearpayReconcileRequest request, CancellationToken ct = default)
-    {
-        var nearPay = EnsureInitialized();
-
-        var tcs = new TaskCompletionSource<NearpayOperationResult<NearpayReconcileResult>>(TaskCreationOptions.RunContinuationsAsynchronously);
-        using var reg = ct.Register(() => tcs.TrySetCanceled(ct));
-
-        await MainThread.InvokeOnMainThreadAsync(() =>
-        {
-            try
-            {
-                nearPay.Reconcile(
-                    reconcileId: request.ReconcileId is null ? null : UUID.FromString(request.ReconcileId.Value.ToString()),
-                    enableReceiptUi: request.EnableReceiptUi,
-                    adminPin: request.AdminPin,
-                    finishTimeOut: request.FinishTimeoutSeconds,
-                    enableUiDismiss: request.EnableUiDismiss,
-                    listener: new ReconcileListener(tcs));
-            }
-            catch (Exception ex)
-            {
-                tcs.TrySetResult(new NearpayOperationResult<NearpayReconcileResult>(
-                    false,
-                    NearpaySdkRawDump.Explain("Reconcile", ex)));
-            }
-        });
-
-        return await tcs.Task.ConfigureAwait(false);
-    }
-
     private NearPay EnsureInitialized()
-        => _nearPay ?? throw new InvalidOperationException("NearPay غير مهيأ بعد. اضغط Initialize أولاً.");
+        => _nearPay ?? throw new InvalidOperationException("NearPay غير مهيأ بعد. نفّذ Initialize أو Prepare أولاً.");
+
+    private static TaskCompletionSource<T> CreateCompletionSource<T>()
+        => new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    private static async Task<T> ExecuteOnMainThreadAsync<T>(
+        TaskCompletionSource<T> tcs,
+        Action action,
+        CancellationToken ct,
+        Func<Exception, T> onException)
+    {
+        using var reg = ct.Register(() => tcs.TrySetCanceled(ct));
+
+        await MainThread.InvokeOnMainThreadAsync(() =>
+        {
+            try
+            {
+                action();
+            }
+            catch (Exception ex)
+            {
+                tcs.TrySetResult(onException(ex));
+            }
+        });
+
+        return await tcs.Task.ConfigureAwait(false);
+    }
 
     private static Environments MapEnvironment(NearpayEnvironment env) => env switch
     {
@@ -269,9 +301,7 @@ public sealed class NearpayServiceAndroid : INearpayService
             NearpayAuthMode.Jwt => new AuthenticationData.Jwt(value ?? string.Empty),
             NearpayAuthMode.Email => new AuthenticationData.Email(value ?? string.Empty),
             NearpayAuthMode.Mobile => new AuthenticationData.Mobile(value ?? string.Empty),
-
             NearpayAuthMode.DeviceLinking => AuthenticationData.DeviceLinking.Instance,
-
             _ => AuthenticationData.UserEnter.Instance,
         };
     }
@@ -281,26 +311,48 @@ public sealed class NearpayServiceAndroid : INearpayService
             ? JLocale.Default!
             : JLocale.ForLanguageTag(localeTag);
 
+    private static UUID? ToJavaUuid(Guid? value)
+        => value is null ? null : UUID.FromString(value.Value.ToString());
+
+    private static NearpayTransactionResult MapTransactionResult(string fallbackMessage, TransactionData transactionData)
+    {
+        var raw = NearpaySdkRawDump.Dump(transactionData);
+        return new NearpayTransactionResult(transactionData.ToString() ?? fallbackMessage, raw);
+    }
+
+    private static NearpayReconcileResult MapReconcileResult(string fallbackMessage, ReconciliationReceipt? receipt)
+    {
+        var raw = receipt is null ? null : ReceiptUtilsKt.ToJson(receipt);
+        return new NearpayReconcileResult(receipt?.ToString() ?? fallbackMessage, raw);
+    }
+
+    private static NearpayOperationResult Fail(string operation, Exception ex)
+        => new(false, NearpaySdkRawDump.Explain(operation, ex), ex);
+
+    private static NearpayOperationResult<T> Fail<T>(string operation, Exception ex)
+        => new(false, NearpaySdkRawDump.Explain(operation, ex), default, ex);
+
+    private static void ValidateRequired(string? value, string fieldName)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            throw new InvalidOperationException($"{fieldName} مطلوب.");
+    }
+
     private static void ValidateRequest(NearpayInitializationRequest request)
     {
-        var v = request.AuthValue?.Trim();
-
+        var value = request.AuthValue?.Trim();
         if (request.AuthMode is NearpayAuthMode.Jwt or NearpayAuthMode.Email or NearpayAuthMode.Mobile)
         {
-            if (string.IsNullOrWhiteSpace(v))
+            if (string.IsNullOrWhiteSpace(value))
                 throw new InvalidOperationException("طريقة الدخول المختارة تتطلب Auth Value. اكتب JWT/Email/Mobile أو اختر UserEnter.");
         }
     }
-
-    // -----------------
-    // Listener adapters
-    // -----------------
 
     private sealed class SetupListener(TaskCompletionSource<NearpayOperationResult> tcs)
         : Java.Lang.Object, ISetupListener
     {
         public void OnSetupCompleted()
-            => tcs.TrySetResult(new NearpayOperationResult(true, "OnSetupCompleted"));
+            => tcs.TrySetResult(new NearpayOperationResult(true, "Setup completed successfully."));
 
         public void OnSetupFailed(SetupFailure setupFailure)
             => tcs.TrySetResult(new NearpayOperationResult(false, NearpaySdkRawDump.Explain("Setup", setupFailure)));
@@ -312,8 +364,8 @@ public sealed class NearpayServiceAndroid : INearpayService
         public void OnPurchaseApproved(TransactionData transactionData)
             => tcs.TrySetResult(new NearpayOperationResult<NearpayTransactionResult>(
                 true,
-                "OnPurchaseApproved",
-                new NearpayTransactionResult(transactionData.ToString() ?? "OnPurchaseApproved", transactionData.ToString())));
+                "Purchase approved.",
+                MapTransactionResult("Purchase approved.", transactionData)));
 
         public void OnPurchaseFailed(PurchaseFailure purchaseFailure)
             => tcs.TrySetResult(new NearpayOperationResult<NearpayTransactionResult>(
@@ -327,8 +379,8 @@ public sealed class NearpayServiceAndroid : INearpayService
         public void OnRefundApproved(TransactionData transactionData)
             => tcs.TrySetResult(new NearpayOperationResult<NearpayTransactionResult>(
                 true,
-                "OnRefundApproved",
-                new NearpayTransactionResult(transactionData.ToString() ?? "OnRefundApproved", transactionData.ToString())));
+                "Refund approved.",
+                MapTransactionResult("Refund approved.", transactionData)));
 
         public void OnRefundFailed(RefundFailure refundFailure)
             => tcs.TrySetResult(new NearpayOperationResult<NearpayTransactionResult>(
@@ -342,8 +394,8 @@ public sealed class NearpayServiceAndroid : INearpayService
         public void OnReversalFinished(TransactionData transactionData)
             => tcs.TrySetResult(new NearpayOperationResult<NearpayTransactionResult>(
                 true,
-                "OnReversalFinished",
-                new NearpayTransactionResult(transactionData.ToString() ?? "OnReversalFinished", transactionData.ToString())));
+                "Reversal finished.",
+                MapTransactionResult("Reversal finished.", transactionData)));
 
         public void OnReversalFailed(ReversalFailure reversalFailure)
             => tcs.TrySetResult(new NearpayOperationResult<NearpayTransactionResult>(
@@ -354,14 +406,11 @@ public sealed class NearpayServiceAndroid : INearpayService
     private sealed class ReconcileListener(TaskCompletionSource<NearpayOperationResult<NearpayReconcileResult>> tcs)
         : Java.Lang.Object, IReconcileListener
     {
-        public void OnReconcileFinished(IO.Nearpay.Sdk.Data.Models.ReconciliationReceipt? receipt)
-        {
-            var json = receipt is null ? null : ReceiptUtilsKt.ToJson(receipt);
-            tcs.TrySetResult(new NearpayOperationResult<NearpayReconcileResult>(
+        public void OnReconcileFinished(ReconciliationReceipt? receipt)
+            => tcs.TrySetResult(new NearpayOperationResult<NearpayReconcileResult>(
                 true,
-                "Finished",
-                new NearpayReconcileResult(receipt?.ToString() ?? "Finished", json)));
-        }
+                "Reconcile finished.",
+                MapReconcileResult("Reconcile finished.", receipt)));
 
         public void OnReconcileFailed(ReconcileFailure reconcileFailure)
             => tcs.TrySetResult(new NearpayOperationResult<NearpayReconcileResult>(
@@ -373,7 +422,10 @@ public sealed class NearpayServiceAndroid : INearpayService
         : Java.Lang.Object, ICompatibilityListener
     {
         public void OnDeviceCompatible()
-            => tcs.TrySetResult(new NearpayOperationResult<string>(true, "OnDeviceCompatible", "OnDeviceCompatible"));
+            => tcs.TrySetResult(new NearpayOperationResult<string>(
+                true,
+                "Device is compatible with NearPay.",
+                "Device is compatible with NearPay."));
 
         public void OnDeviceIncompatible(CompatibilityFailure compatibilityFailure)
         {
@@ -401,6 +453,43 @@ public sealed class NearpayServiceAndroid : INearpayService
         }
 
         public void OnSessionFree()
-            => tcs.TrySetResult(new NearpayOperationResult<string>(true, "OnSessionFree", "OnSessionFree"));
+            => tcs.TrySetResult(new NearpayOperationResult<string>(true, "Session is free.", "Session is free."));
+    }
+
+    private sealed class DismissListener(TaskCompletionSource<NearpayOperationResult> tcs)
+        : Java.Lang.Object, IDismissListener
+    {
+        public void OnDismiss(bool dismissed)
+            => tcs.TrySetResult(new NearpayOperationResult(
+                dismissed,
+                dismissed ? "Dismiss completed." : "Dismiss was not completed."));
+
+        public void OnDismissFailure(DismissFailure dismissFailure)
+            => tcs.TrySetResult(new NearpayOperationResult(false, NearpaySdkRawDump.Explain("Dismiss", dismissFailure)));
+    }
+
+    private sealed class LogoutListener(TaskCompletionSource<NearpayOperationResult> tcs)
+        : Java.Lang.Object, ILogoutListener
+    {
+        public void OnLogoutCompleted()
+            => tcs.TrySetResult(new NearpayOperationResult(true, "Logout completed."));
+
+        public void OnLogoutFailed(LogoutFailure logoutFailure)
+            => tcs.TrySetResult(new NearpayOperationResult(false, NearpaySdkRawDump.Explain("Logout", logoutFailure)));
+    }
+
+    private sealed class GetReconcileReceiptListener(TaskCompletionSource<NearpayOperationResult<NearpayReconcileResult>> tcs)
+        : Java.Lang.Object, IGetReconcileListener
+    {
+        public void OnSuccess(ReconciliationReceipt? receipt)
+            => tcs.TrySetResult(new NearpayOperationResult<NearpayReconcileResult>(
+                true,
+                "Reconciliation receipt loaded.",
+                MapReconcileResult("Reconciliation receipt loaded.", receipt)));
+
+        public void OnFailure(GetDataFailure failure)
+            => tcs.TrySetResult(new NearpayOperationResult<NearpayReconcileResult>(
+                false,
+                NearpaySdkRawDump.Explain("GetReconciliationReceipt", failure)));
     }
 }
